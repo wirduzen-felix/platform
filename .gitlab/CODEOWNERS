@@ -41,8 +41,24 @@ phpunit.xml.dist                      @product/engineering/platform-group/core
 /adr/                                                                                   @product/engineering/platform-group/admin
 
 [Storefront]
-/src/Storefront/        @product/engineering/platform-group/storefront
-/adr/                   @product/engineering/platform-group/storefront
+/src/Storefront/*                                   @product/engineering/platform-group/storefront
+/src/Storefront/Controller/                         @product/engineering/platform-group/storefront
+/src/Storefront/DependencyInjection/                @product/engineering/platform-group/storefront
+/src/Storefront/Event/                              @product/engineering/platform-group/storefront
+/src/Storefront/Exception/                          @product/engineering/platform-group/storefront
+/src/Storefront/Framework/                          @product/engineering/platform-group/storefront
+/src/Storefront/Migration/                          @product/engineering/platform-group/storefront
+/src/Storefront/Page/                               @product/engineering/platform-group/storefront
+/src/Storefront/Pagelet/                            @product/engineering/platform-group/storefront
+/src/Storefront/Resources/*                         @product/engineering/platform-group/storefront
+/src/Storefront/Resources/app/*                     @product/engineering/platform-group/storefront
+/src/Storefront/Resources/app/administration/*      @product/engineering/platform-group/storefront
+/src/Storefront/Resources/app/administration/src/   @product/engineering/platform-group/storefront
+/src/Storefront/Resources/app/storefront/*          @product/engineering/platform-group/storefront
+/src/Storefront/Resources/app/storefront/src/       @product/engineering/platform-group/storefront
+/src/Storefront/Test/                               @product/engineering/platform-group/storefront
+/src/Storefront/Theme/                              @product/engineering/platform-group/storefront
+/adr/                                               @product/engineering/platform-group/storefront
 
 [Operations]
 /.github/               @product/engineering/operations @product/engineering/platform-group/core @product/engineering/platform-group/admin @product/engineering/platform-group/storefront
