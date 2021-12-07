@@ -75,8 +75,8 @@ class CreditNoteGenerator implements DocumentGeneratorInterface
         }
 
         $price = new CartPrice(
-            -($totalPrice - $taxAmount),
             -$totalPrice,
+            -($totalPrice + $taxAmount),
             -$order->getPositionPrice(),
             $taxes,
             $creditItemsCalculatedPrice->getTaxRules(),
