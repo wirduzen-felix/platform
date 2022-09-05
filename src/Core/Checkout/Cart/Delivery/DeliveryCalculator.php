@@ -84,7 +84,7 @@ class DeliveryCalculator
             return;
         }
 
-        if ($this->hasDeliveryWithOnlyShippingFreeItems($delivery)) {
+        if ($this->hasDeliveryWithOnlyShippingFreeItems($delivery) || $delivery->getShippingCosts()->getUnitPrice() === 0.0) {
             $costs = $this->calculateShippingCosts(
                 $delivery->getShippingMethod(),
                 new PriceCollection([new Price(Defaults::CURRENCY, 0, 0, false)]),
