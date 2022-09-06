@@ -123,9 +123,11 @@ class DeliveryProcessorTest extends TestCase
 
         $calculatedCart = new Cart('calculated', 'calculated');
 
-        $calculatedCart->setBehavior(new CartBehavior([
-            DeliveryProcessor::SKIP_DELIVERY_PRICE_RECALCULATION => true
-        ]));
+        $cartBehavior = new CartBehavior([
+            DeliveryProcessor::SKIP_DELIVERY_PRICE_RECALCULATION => true,
+        ]);
+
+        $calculatedCart->setBehavior($cartBehavior);
 
         $lineItem = new LineItem('test', LineItem::PRODUCT_LINE_ITEM_TYPE);
         $lineItem->setDeliveryInformation(new DeliveryInformation(5, 0, false));
@@ -134,10 +136,6 @@ class DeliveryProcessorTest extends TestCase
         ]), new TaxRuleCollection()));
 
         $calculatedCart->setLineItems(new LineItemCollection([$lineItem]));
-
-        $cartBehavior = new CartBehavior([
-            DeliveryProcessor::SKIP_DELIVERY_PRICE_RECALCULATION => true,
-        ]);
 
         static::assertCount(0, $calculatedCart->getDeliveries());
 
