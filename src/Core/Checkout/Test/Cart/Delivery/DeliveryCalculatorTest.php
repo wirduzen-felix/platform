@@ -1947,12 +1947,6 @@ class DeliveryCalculatorTest extends TestCase
             DeliveryProcessor::SKIP_DELIVERY_PRICE_RECALCULATION => true
         ]));
 
-        /*
-         * Das hier ist falsch. Wir wollen ja nicht prüfen, was passiert, wenn wir eine neue Shipping Method mit Versandkosten
-         * 0 verwenden, sondern was passiert, wenn wir bei gleichbleibender Shipping Method die Versandkosten ändern
-         */
-
-
         /** @var Delivery $delivery */
         $delivery = $deliveries->first();
         $delivery->setShippingCosts(new CalculatedPrice(0, 0,
