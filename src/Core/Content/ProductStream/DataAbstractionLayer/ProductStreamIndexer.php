@@ -5,6 +5,7 @@ namespace Shopware\Core\Content\ProductStream\DataAbstractionLayer;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\ProductStream\Event\ProductStreamIndexerEvent;
+use Shopware\Core\Content\ProductStream\Exception\ProductStreamNotFoundException;
 use Shopware\Core\Content\ProductStream\ProductStreamDefinition;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
 use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\FetchModeHelper;
@@ -100,8 +101,9 @@ class ProductStreamIndexer extends EntityIndexer
             $serialized = null;
 
             try {
+                $filter = $this->resolveNestedProductStream($filter);
                 $serialized = $this->buildPayload($filter);
-            } catch (InvalidFilterQueryException | SearchRequestException) {
+            } catch (InvalidFilterQueryException | SearchRequestException | ProductStreamNotFoundException) {
                 $invalid = true;
             } finally {
                 $update->execute([
@@ -174,6 +176,32 @@ class ProductStreamIndexer extends EntityIndexer
         }
 
         return $nested;
+    }
+
+    private function resolveNestedProductStream(array $entities): array
+    {
+        $subStreamStmt = $this->connection->prepare(
+            'SELECT id, product_stream_id, IFNULL(parent_id, :parentId) as parent_id, `type`, `field`, `operator`, `value`, `parameters`, `position`, `custom_fields`, `created_at`, `updated_at` FROM product_stream_filter WHERE product_stream_id = UNHEX(:streamId)'
+        );
+
+        $resolved = [];
+
+        foreach ($entities as $entity) {
+            if ($entity['type'] === 'productStream') {
+                $subStreamStmt->bindValue('streamId', $entity['value']);
+                $subStreamStmt->bindValue('parentId', $entity['parent_id']);
+                $resolvedStream = $subStreamStmt->executeQuery()->fetchAllAssociative();
+                if (\count($resolvedStream) === 0) {
+                    throw new ProductStreamNotFoundException($entity['value']);
+                }
+                array_push($resolved, ...$resolvedStream);
+
+                continue;
+            }
+            $resolved[] = $entity;
+        }
+
+        return $resolved;
     }
 
     private function isMultiFilter(string $type): bool

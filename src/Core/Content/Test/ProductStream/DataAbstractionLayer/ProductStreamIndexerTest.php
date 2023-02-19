@@ -515,6 +515,91 @@ class ProductStreamIndexerTest extends TestCase
         static::assertFalse($entity->isInvalid());
     }
 
+    public function testNestedStreams(): void
+    {
+        $basicStreamId = Uuid::randomBytes();
+        $this->connection->insert(
+            'product_stream',
+            [
+                'id' => $basicStreamId,
+                'api_filter' => null,
+                'invalid' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_translation',
+            [
+                'product_stream_id' => $basicStreamId,
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'name' => 'Basic Stream',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'equals',
+                'field' => 'stock',
+                'value' => Uuid::randomHex(),
+                'position' => 1,
+                'product_stream_id' => $basicStreamId,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $nestedStreamId = Uuid::randomBytes();
+
+        $this->connection->insert(
+            'product_stream',
+            [
+                'id' => $nestedStreamId,
+                'api_filter' => null,
+                'invalid' => 1,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_translation',
+            [
+                'product_stream_id' => $nestedStreamId,
+                'language_id' => Uuid::fromHexToBytes(Defaults::LANGUAGE_SYSTEM),
+                'name' => 'Nested Stream',
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $this->connection->insert(
+            'product_stream_filter',
+            [
+                'id' => Uuid::randomBytes(),
+                'type' => 'productStream',
+                'field' => null,
+                'value' => Uuid::fromBytesToHex($basicStreamId),
+                'position' => 1,
+                'product_stream_id' => $nestedStreamId,
+                'created_at' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT),
+            ]
+        );
+
+        $message = $this->indexer->update($this->createWrittenEvent(Uuid::fromBytesToHex($nestedStreamId)));
+        static::assertInstanceOf(EntityIndexingMessage::class, $message);
+        $this->indexer->handle($message);
+        $criteria = new Criteria([Uuid::fromBytesToHex($nestedStreamId)]);
+        $criteria->addAssociation('filters');
+        /** @var ProductStreamEntity|null $stream */
+        $stream = $this->productStreamRepository->search($criteria, $this->context)->get(Uuid::fromBytesToHex($nestedStreamId));
+
+        static::assertNotNull($stream);
+        static::assertFalse($stream->isInvalid());
+        static::assertCount(1, $stream->getApiFilter());
+        static::assertSame('equals', $stream->getApiFilter()[0]['type']);
+    }
+
     private function createWrittenEvent(string $id): EntityWrittenContainerEvent
     {
         return new EntityWrittenContainerEvent(
