@@ -285,9 +285,9 @@ class ListingFeatures
         return array_unique(array_filter([...$options, ...$properties]));
     }
 
-    private function groupOptionAggregations(ProductListingResult $result, Context $context): void
+    private function groupOptionAggregations(ProductListingResult $productListingResult, Context $context): void
     {
-        $ids = $this->collectOptionIds($result);
+        $ids = $this->collectOptionIds($productListingResult);
 
         if (empty($ids)) {
             return;
@@ -304,9 +304,9 @@ class ListingFeatures
         $mergedOptions = new PropertyGroupOptionCollection();
 
         $repositoryIterator = new RepositoryIterator($this->optionRepository, $context, $criteria);
-        while (($result = $repositoryIterator->fetch()) !== null) {
+        while (($optionResult = $repositoryIterator->fetch()) !== null) {
             /** @var PropertyGroupOptionCollection $entities */
-            $entities = $result->getEntities();
+            $entities = $optionResult->getEntities();
 
             $mergedOptions->merge($entities);
         }
@@ -316,7 +316,7 @@ class ListingFeatures
         $grouped->sortByPositions();
         $grouped->sortByConfig();
 
-        $aggregations = $result->getAggregations();
+        $aggregations = $productListingResult->getAggregations();
 
         // remove id results to prevent wrong usages
         $aggregations->remove('properties');
