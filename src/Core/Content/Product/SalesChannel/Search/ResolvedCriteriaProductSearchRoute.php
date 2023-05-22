@@ -9,6 +9,7 @@ use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSub
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\RequestCriteriaBuilder;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Symfony\Component\HttpFoundation\Request;
@@ -46,9 +47,10 @@ class ResolvedCriteriaProductSearchRoute extends AbstractProductSearchRoute
             $context->getContext()
         );
 
-        $this->listingFeatures->handleFlags($request, $criteria);
-        $this->listingFeatures->handleSearchRequest($request, $criteria, $context);
-        $criteria->addState(ProductListingFeaturesSubscriber::ALREADY_HANDLED);
+        if(Feature::isActive("v6.6.0.0")) {
+            $this->listingFeatures->handleFlags($request, $criteria);
+            $this->listingFeatures->handleSearchRequest($request, $criteria, $context);
+        }
 
         $this->eventDispatcher->dispatch(
             new ProductSearchCriteriaEvent($request, $criteria, $context),

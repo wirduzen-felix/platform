@@ -34,6 +34,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Profiling\Profiler;
@@ -52,7 +53,6 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     final public const DEFAULT_SEARCH_SORT = 'score';
 
     final public const PROPERTY_GROUP_IDS_REQUEST_PARAM = 'property-whitelist';
-    final public const ALREADY_HANDLED = 'already-handled';
 
     /**
      * @internal
@@ -79,7 +79,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
             // todo Call new service inside this listeners
             // todo Call new service where event are dispatched
             // todo Implement new functions inside new service
-            // todo add and consider "handled" flag where it got dispatched and listened
+            // todo add feature flag
             ProductListingResultEvent::class => [
                 ['handleResult', 100],
                 ['removeScoreSorting', -100],
@@ -90,38 +90,38 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
 
     public function handleFlags(ProductListingCriteriaEvent $event): void
     {
-        $request = $event->getRequest();
-        $criteria = $event->getCriteria();
-
-        if ($criteria->hasState(self::ALREADY_HANDLED)) {
+        if(Feature::isActive("v6.6.0.0")){
             return;
         }
 
-       $this->listingFeatures->handleFlags($request, $criteria);
+        $request = $event->getRequest();
+        $criteria = $event->getCriteria();
+
+        $this->listingFeatures->handleFlags($request, $criteria);
     }
 
     public function handleListingRequest(ProductListingCriteriaEvent $event): void
     {
+        if(Feature::isActive("v6.6.0.0")){
+            return;
+        }
+
         $request = $event->getRequest();
         $criteria = $event->getCriteria();
         $context = $event->getSalesChannelContext();
-
-        if($criteria->hasState(self::ALREADY_HANDLED)){
-            return;
-        }
 
         $this->listingFeatures->handleListingRequest($request, $criteria, $context);
     }
 
     public function handleSearchRequest(ProductSearchCriteriaEvent $event): void
     {
+        if(Feature::isActive("v6.6.0.0")){
+            return;
+        }
+
         $request = $event->getRequest();
         $criteria = $event->getCriteria();
         $context = $event->getSalesChannelContext();
-
-        if ($criteria->hasState(self::ALREADY_HANDLED)) {
-            return;
-        }
 
         $this->listingFeatures->handleSearchRequest($request, $criteria, $context);
     }
