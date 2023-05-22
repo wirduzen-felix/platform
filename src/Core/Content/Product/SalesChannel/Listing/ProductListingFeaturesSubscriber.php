@@ -8,6 +8,7 @@ use Shopware\Core\Content\Product\Events\ProductSearchCriteriaEvent;
 use Shopware\Core\Content\Product\Events\ProductSearchResultEvent;
 use Shopware\Core\Content\Product\Events\ProductSuggestCriteriaEvent;
 use Shopware\Core\Content\Product\SalesChannel\Sorting\ProductSortingCollection;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Profiling\Profiler;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -21,7 +22,6 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
     final public const DEFAULT_SEARCH_SORT = 'score';
 
     final public const PROPERTY_GROUP_IDS_REQUEST_PARAM = 'property-whitelist';
-    final public const ALREADY_HANDLED = 'already-handled';
 
     /**
      * @internal
