@@ -34,6 +34,7 @@ class ResolveCriteriaProductListingRoute extends AbstractProductListingRoute
     public function load(string $categoryId, Request $request, SalesChannelContext $context, Criteria $criteria): ProductListingRouteResponse
     {
         if(Feature::isActive("v6.6.0.0")) {
+            $this->listingFeatures->handleListingRequest($request, $criteria, $context);
             $this->listingFeatures->handleFlags($request, $criteria);
         }
 
