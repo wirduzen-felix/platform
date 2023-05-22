@@ -15,6 +15,7 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
  * @internal
+ * @deprecated tag:v6.6.0 - will be removed and replaced by ListingFeatures
  */
 #[Package('inventory')]
 class ProductListingFeaturesSubscriber implements EventSubscriberInterface
