@@ -48,8 +48,8 @@ class ResolvedCriteriaProductSearchRoute extends AbstractProductSearchRoute
         );
 
         if(Feature::isActive("v6.6.0.0")) {
-            $this->listingFeatures->handleFlags($request, $criteria);
             $this->listingFeatures->handleSearchRequest($request, $criteria, $context);
+            $this->listingFeatures->handleFlags($request, $criteria);
         }
 
         $this->eventDispatcher->dispatch(
