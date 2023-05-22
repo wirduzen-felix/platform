@@ -6,6 +6,8 @@ use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityD
 use Shopware\Core\Content\Product\Events\ProductSuggestCriteriaEvent;
 use Shopware\Core\Content\Product\Events\ProductSuggestResultEvent;
 use Shopware\Core\Content\Product\ProductEvents;
+use Shopware\Core\Content\Product\SalesChannel\Listing\ListingFeatures;
+use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingFeaturesSubscriber;
 use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
 use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
@@ -29,7 +31,8 @@ class ProductSuggestRoute extends AbstractProductSuggestRoute
     public function __construct(
         private readonly ProductSearchBuilderInterface $searchBuilder,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly ProductListingLoader $productListingLoader
+        private readonly ProductListingLoader $productListingLoader,
+        private readonly ListingFeatures $listingFeatures
     ) {
     }
 
@@ -52,6 +55,9 @@ class ProductSuggestRoute extends AbstractProductSuggestRoute
         $criteria->addState(Criteria::STATE_ELASTICSEARCH_AWARE);
 
         $this->searchBuilder->build($request, $criteria, $context);
+
+        $this->listingFeatures->handleFlags($request, $criteria);
+        $criteria->addState(ProductListingFeaturesSubscriber::ALREADY_HANDLED);
 
         $this->eventDispatcher->dispatch(
             new ProductSuggestCriteriaEvent($request, $criteria, $context),
