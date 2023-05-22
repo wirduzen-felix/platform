@@ -5,11 +5,13 @@ namespace Shopware\Core\Content\Product\SalesChannel\Search;
 use Shopware\Core\Content\Product\Aggregate\ProductVisibility\ProductVisibilityDefinition;
 use Shopware\Core\Content\Product\Events\ProductSearchResultEvent;
 use Shopware\Core\Content\Product\ProductEvents;
+use Shopware\Core\Content\Product\SalesChannel\Listing\ListingFeatures;
 use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingLoader;
 use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopware\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
@@ -28,7 +30,8 @@ class ProductSearchRoute extends AbstractProductSearchRoute
     public function __construct(
         private readonly ProductSearchBuilderInterface $searchBuilder,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly ProductListingLoader $productListingLoader
+        private readonly ProductListingLoader $productListingLoader,
+        private readonly ListingFeatures $listingFeatures
     ) {
     }
 
@@ -55,6 +58,10 @@ class ProductSearchRoute extends AbstractProductSearchRoute
         $result = $this->productListingLoader->load($criteria, $context);
 
         $result = ProductListingResult::createFrom($result);
+
+        if(Feature::isActive("v6.6.0.0")){
+            $this->listingFeatures->handleResult($request, $result, $context);
+        }
 
         $this->eventDispatcher->dispatch(
             new ProductSearchResultEvent($request, $result, $context),

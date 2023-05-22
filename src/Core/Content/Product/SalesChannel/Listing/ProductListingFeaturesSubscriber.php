@@ -96,28 +96,17 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         $this->listingFeatures->handleSearchRequest($request, $criteria, $context);
     }
 
-    // Fixme: move to ListingFeatures.php
     public function handleResult(ProductListingResultEvent $event): void
     {
-        Profiler::trace('product-listing::feature-subscriber', function () use ($event): void {
-            $this->groupOptionAggregations($event);
+        if(Feature::isActive("v6.6.0.0")){
+            return;
+        }
 
-            $this->addCurrentFilters($event);
+        $request = $event->getRequest();
+        $result = $event->getResult();
+        $context = $event->getSalesChannelContext();
 
-            $result = $event->getResult();
-
-            /** @var ProductSortingCollection $sortings */
-            $sortings = $result->getCriteria()->getExtension('sortings');
-            $currentSortingKey = $this->getCurrentSorting($sortings, $event->getRequest())->getKey();
-
-            $result->setSorting($currentSortingKey);
-
-            $result->setAvailableSortings($sortings);
-
-            $result->setPage($this->getPage($event->getRequest()));
-
-            $result->setLimit($this->getLimit($event->getRequest(), $event->getSalesChannelContext()));
-        });
+        $this->listingFeatures->handleResult($request, $result, $context);
     }
 
     // Fixme: Move to ListingFeatures.php

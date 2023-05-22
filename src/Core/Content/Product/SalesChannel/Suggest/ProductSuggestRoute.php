@@ -70,6 +70,10 @@ class ProductSuggestRoute extends AbstractProductSuggestRoute
 
         $result = ProductListingResult::createFrom($result);
 
+        if(Feature::isActive("v6.6.0.0")){
+            $this->listingFeatures->handleResult($request, $result, $context);
+        }
+
         $this->eventDispatcher->dispatch(
             new ProductSuggestResultEvent($request, $result, $context),
             ProductEvents::PRODUCT_SUGGEST_RESULT

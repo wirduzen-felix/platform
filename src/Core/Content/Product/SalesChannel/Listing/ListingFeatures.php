@@ -32,6 +32,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\RangeFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Sorting\FieldSorting;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Uuid\Uuid;
+use Shopware\Core\Profiling\Profiler;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Component\HttpFoundation\Request;
@@ -243,12 +244,34 @@ class ListingFeatures
         );
     }
 
+    public function handleResult(Request $request, ProductListingResult $result, SalesChannelContext $context): void
+    {
+        Profiler::trace('product-listing::feature-subscriber', function () use ($request, $result, $context): void {
+            $this->groupOptionAggregations($result, $context->getContext());
+
+            $this->addCurrentFilters($result);
+
+
+            /** @var ProductSortingCollection $sortings */
+            $sortings = $result->getCriteria()->getExtension('sortings');
+            $currentSortingKey = $this->getCurrentSorting($sortings, $request)->getKey();
+
+            $result->setSorting($currentSortingKey);
+
+            $result->setAvailableSortings($sortings);
+
+            $result->setPage($this->getPage($request));
+
+            $result->setLimit($this->getLimit($request, $context));
+        });
+    }
+
     /**
      * @return array<int, non-falsy-string>
      */
-    private function collectOptionIds(ProductListingResultEvent $event): array
+    private function collectOptionIds(ProductListingResult $result): array
     {
-        $aggregations = $event->getResult()->getAggregations();
+        $aggregations = $result->getAggregations();
 
         /** @var TermsResult|null $properties */
         $properties = $aggregations->get('properties');
@@ -262,9 +285,9 @@ class ListingFeatures
         return array_unique(array_filter([...$options, ...$properties]));
     }
 
-    private function groupOptionAggregations(ProductListingResultEvent $event): void
+    private function groupOptionAggregations(ProductListingResult $result, Context $context): void
     {
-        $ids = $this->collectOptionIds($event);
+        $ids = $this->collectOptionIds($result);
 
         if (empty($ids)) {
             return;
@@ -280,7 +303,7 @@ class ListingFeatures
 
         $mergedOptions = new PropertyGroupOptionCollection();
 
-        $repositoryIterator = new RepositoryIterator($this->optionRepository, $event->getContext(), $criteria);
+        $repositoryIterator = new RepositoryIterator($this->optionRepository, $context, $criteria);
         while (($result = $repositoryIterator->fetch()) !== null) {
             /** @var PropertyGroupOptionCollection $entities */
             $entities = $result->getEntities();
@@ -293,7 +316,7 @@ class ListingFeatures
         $grouped->sortByPositions();
         $grouped->sortByConfig();
 
-        $aggregations = $event->getResult()->getAggregations();
+        $aggregations = $result->getAggregations();
 
         // remove id results to prevent wrong usages
         $aggregations->remove('properties');
@@ -303,10 +326,8 @@ class ListingFeatures
         $aggregations->add(new EntityResult('properties', $grouped));
     }
 
-    private function addCurrentFilters(ProductListingResultEvent $event): void
+    private function addCurrentFilters(ProductListingResult $result): void
     {
-        $result = $event->getResult();
-
         $filters = $result->getCriteria()->getExtension('filters');
         if (!$filters instanceof FilterCollection) {
             return;

@@ -12,6 +12,7 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\PartialEntity;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -31,6 +32,7 @@ class ProductListingRoute extends AbstractProductListingRoute
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly EntityRepository $categoryRepository,
         private readonly ProductStreamBuilderInterface $productStreamBuilder,
+        private readonly ListingFeatures $listingFeatures
     ) {
     }
 
@@ -66,6 +68,10 @@ class ProductListingRoute extends AbstractProductListingRoute
         $result->addState(...$entities->getStates());
 
         $result->addCurrentFilter('navigationId', $categoryId);
+
+        if(Feature::isActive("v6.6.0.0")){
+            $this->listingFeatures->handleResult($request, $result, $context);
+        }
 
         $this->eventDispatcher->dispatch(
             new ProductListingResultEvent($request, $result, $context)
