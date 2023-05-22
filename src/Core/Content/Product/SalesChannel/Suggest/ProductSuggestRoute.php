@@ -13,6 +13,7 @@ use Shopware\Core\Content\Product\SalesChannel\Listing\ProductListingResult;
 use Shopware\Core\Content\Product\SalesChannel\ProductAvailableFilter;
 use Shopware\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
@@ -56,8 +57,9 @@ class ProductSuggestRoute extends AbstractProductSuggestRoute
 
         $this->searchBuilder->build($request, $criteria, $context);
 
-        $this->listingFeatures->handleFlags($request, $criteria);
-        $criteria->addState(ProductListingFeaturesSubscriber::ALREADY_HANDLED);
+        if(Feature::isActive("v6.6.0.0")) {
+            $this->listingFeatures->handleFlags($request, $criteria);
+        }
 
         $this->eventDispatcher->dispatch(
             new ProductSuggestCriteriaEvent($request, $criteria, $context),
