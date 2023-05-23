@@ -7,10 +7,8 @@ use Shopware\Core\Content\Product\Events\ProductListingResultEvent;
 use Shopware\Core\Content\Product\Events\ProductSearchCriteriaEvent;
 use Shopware\Core\Content\Product\Events\ProductSearchResultEvent;
 use Shopware\Core\Content\Product\Events\ProductSuggestCriteriaEvent;
-use Shopware\Core\Content\Product\SalesChannel\Sorting\ProductSortingCollection;
 use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Log\Package;
-use Shopware\Core\Profiling\Profiler;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
@@ -46,10 +44,6 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
                 ['handleSearchRequest', 100],
                 ['handleFlags', -100],
             ],
-            // todo Call new service inside this listeners
-            // todo Call new service where event are dispatched
-            // todo Implement new functions inside new service
-            // todo add feature flag
             ProductListingResultEvent::class => [
                 ['handleResult', 100],
                 ['removeScoreSorting', -100],
@@ -60,7 +54,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
 
     public function handleFlags(ProductListingCriteriaEvent $event): void
     {
-        if(Feature::isActive("v6.6.0.0")){
+        if (Feature::isActive("v6.6.0.0")) {
             return;
         }
 
@@ -72,7 +66,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
 
     public function handleListingRequest(ProductListingCriteriaEvent $event): void
     {
-        if(Feature::isActive("v6.6.0.0")){
+        if (Feature::isActive("v6.6.0.0")) {
             return;
         }
 
@@ -85,7 +79,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
 
     public function handleSearchRequest(ProductSearchCriteriaEvent $event): void
     {
-        if(Feature::isActive("v6.6.0.0")){
+        if (Feature::isActive("v6.6.0.0")) {
             return;
         }
 
@@ -98,7 +92,7 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
 
     public function handleResult(ProductListingResultEvent $event): void
     {
-        if(Feature::isActive("v6.6.0.0")){
+        if (Feature::isActive("v6.6.0.0")) {
             return;
         }
 
@@ -109,15 +103,15 @@ class ProductListingFeaturesSubscriber implements EventSubscriberInterface
         $this->listingFeatures->handleResult($request, $result, $context);
     }
 
-    // Fixme: Move to ListingFeatures.php
     public function removeScoreSorting(ProductListingResultEvent $event): void
     {
+        if (Feature::isActive("v6.6.0.0")) {
+            return;
+        }
+
         $sortings = $event->getResult()->getAvailableSortings();
 
-        $defaultSorting = $sortings->getByKey(self::DEFAULT_SEARCH_SORT);
-        if ($defaultSorting !== null) {
-            $sortings->remove($defaultSorting->getId());
-        }
+        $sortings = $this->listingFeatures->removeScoreSorting($sortings);
 
         $event->getResult()->setAvailableSortings($sortings);
     }

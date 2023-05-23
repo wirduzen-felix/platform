@@ -237,12 +237,24 @@
             <argument type="service" id="Shopware\Core\Content\Product\SalesChannel\Listing\ListingFeatures"/>
         </service>
 
-        <service id="Shopware\Core\Content\Product\SalesChannel\Listing\ListingFeatures">
+        <service id="Shopware\Core\Content\Product\SalesChannel\Listing\FilterHandler\ManufacturerFilterHandler" />
+        <service id="Shopware\Core\Content\Product\SalesChannel\Listing\FilterHandler\PriceAbstractFilterHandler" />
+        <service id="Shopware\Core\Content\Product\SalesChannel\Listing\FilterHandler\PropertyAbstractFilterHandler">
             <argument type="service" id="Doctrine\DBAL\Connection"/>
             <argument type="service" id="property_group_option.repository"/>
+        </service>
+        <service id="Shopware\Core\Content\Product\SalesChannel\Listing\FilterHandler\RatingAbstractFilterCreator" />
+        <service id="Shopware\Core\Content\Product\SalesChannel\Listing\FilterHandler\ShippingFreeAbstractFilterCreator" />
+
+        <instanceof id="Shopware\Core\Content\Product\SalesChannel\Listing\FilterHandler\AbstractFilterHandler">
+            <tag>shopware.sales_channel.listing.filter_handler</tag>
+        </instanceof>
+
+        <service id="Shopware\Core\Content\Product\SalesChannel\Listing\ListingFeatures">
             <argument type="service" id="product_sorting.repository"/>
             <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
             <argument type="service" id="event_dispatcher"/>
+            <argument type="tagged_iterator" tag="shopware.sales_channel.listing.filter_handler"/>
         </service>
 
         <service id="Shopware\Core\Content\Product\SearchKeyword\ProductSearchBuilderInterface"
