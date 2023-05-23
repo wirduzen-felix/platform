@@ -71,6 +71,7 @@ class ProductListingRoute extends AbstractProductListingRoute
 
         if(Feature::isActive("v6.6.0.0")){
             $this->listingFeatures->handleResult($request, $result, $context);
+            $this->listingFeatures->removeScoreSorting($result->getAvailableSortings());
         }
 
         $this->eventDispatcher->dispatch(
