@@ -218,7 +218,7 @@
     },
     "list": {
       "textProductOverview": "Produkte",
-      "buttonAddProduct": "Physisches Produkt anlegen",
+      "buttonAddProduct": "Produkt anlegen",
       "buttonAddDownloadableProduct": "Digitales Produkt anlegen",
       "buttonCancel": "Abbrechen",
       "buttonDuplicate": "Duplizieren",
@@ -238,6 +238,7 @@
       "columnTags": "Tags",
       "columnActions": "Aktion(en)",
       "columnMedia": "Medien",
+      "columnSales": "Verkäufe",
       "columnDownloadsTooltip": "Digitale Produkte müssen über mindestens eine Datei verfügen.",
       "contextMenuEdit": "Bearbeiten",
       "contextMenuDelete": "Löschen",
@@ -526,9 +527,20 @@
         "label": "Kategorien",
         "placeholder": "Kategorien auswählen ..."
       },
+      "salesFilter": {
+        "label": "Verkäufe"
+      },
       "tagsFilter": {
         "label": "Tags",
         "placeholder": "Tags auswählen ..."
+      },
+      "productStatesFilter": {
+        "label": "Produktzustände",
+        "placeholder": "Produktzustand auswählen ...",
+        "options": {
+          "physical": "Physisch",
+          "digital": "Digital"
+        }
       },
       "messageEmptyTitle": "Nichts gefunden",
       "messageEmptySubline": "Bearbeite Deine Filter, um Ergebnisse zu finden."

@@ -5,9 +5,9 @@ namespace Shopware\Core\System\Country\SalesChannel;
 use Shopware\Core\Framework\Adapter\Cache\AbstractCacheTracer;
 use Shopware\Core\Framework\Adapter\Cache\CacheValueCompressor;
 use Shopware\Core\Framework\DataAbstractionLayer\Cache\EntityCacheKeyGenerator;
-use Shopware\Core\Framework\DataAbstractionLayer\FieldSerializer\JsonFieldSerializer;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Log\Package;
+use Shopware\Core\Framework\Util\Json;
 use Shopware\Core\System\Country\Event\CountryRouteCacheKeyEvent;
 use Shopware\Core\System\Country\Event\CountryRouteCacheTagsEvent;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
@@ -45,11 +45,6 @@ class CachedCountryRoute extends AbstractCountryRoute
         return 'country-route-' . $id;
     }
 
-    public function getDecorated(): AbstractCountryRoute
-    {
-        return $this->decorated;
-    }
-
     #[Route(path: '/store-api/country', name: 'store-api.country', methods: ['GET', 'POST'], defaults: ['_entity' => 'country'])]
     public function load(Request $request, Criteria $criteria, SalesChannelContext $context): CountryRouteResponse
     {
@@ -76,6 +71,11 @@ class CachedCountryRoute extends AbstractCountryRoute
         return CacheValueCompressor::uncompress($value);
     }
 
+    protected function getDecorated(): AbstractCountryRoute
+    {
+        return $this->decorated;
+    }
+
     private function generateKey(Request $request, SalesChannelContext $context, Criteria $criteria): ?string
     {
         $parts = [
@@ -90,7 +90,7 @@ class CachedCountryRoute extends AbstractCountryRoute
             return null;
         }
 
-        return self::buildName($context->getSalesChannelId()) . '-' . md5(JsonFieldSerializer::encodeJson($event->getParts()));
+        return self::buildName($context->getSalesChannelId()) . '-' . md5(Json::encode($event->getParts()));
     }
 
     /**

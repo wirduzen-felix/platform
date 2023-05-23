@@ -22,16 +22,13 @@ class ShippingMethodRepositoryTest extends TestCase
 {
     use IntegrationTestBehaviour;
 
-    /**
-     * @var EntityRepository
-     */
-    private $shippingRepository;
+    private EntityRepository $shippingRepository;
 
     private string $shippingMethodId;
 
     private string $ruleId;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->shippingRepository = $this->getContainer()->get('shipping_method.repository');
         $this->shippingMethodId = Uuid::randomHex();
@@ -123,7 +120,7 @@ class ShippingMethodRepositoryTest extends TestCase
             /** @var WriteConstraintViolationException $constraintViolation */
             $constraintViolation = $e->getExceptions()[0];
             static::assertInstanceOf(WriteConstraintViolationException::class, $constraintViolation);
-            static::assertEquals('/name', $constraintViolation->getViolations()[0]->getPropertyPath());
+            static::assertEquals('/name', $constraintViolation->getViolations()->get(0)->getPropertyPath());
         }
     }
 

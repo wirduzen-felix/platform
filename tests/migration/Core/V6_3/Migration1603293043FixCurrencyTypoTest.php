@@ -18,9 +18,9 @@ class Migration1603293043FixCurrencyTypoTest extends TestCase
 {
     use MigrationTestTrait;
 
-    final public const wrongTranslation = 'Swedish krone';
+    final public const WRONG_TRANSLATION = 'Swedish krone';
 
-    final public const correctTranslation = 'Swedish krona';
+    final public const CORRECT_TRANSLATION = 'Swedish krona';
 
     private Connection $connection;
 
@@ -88,7 +88,7 @@ class Migration1603293043FixCurrencyTypoTest extends TestCase
     /**
      * @return bool[][]
      */
-    public function migrationCases(): array
+    public static function migrationCases(): array
     {
         return [
             [true, true, true, true],
@@ -120,7 +120,7 @@ class Migration1603293043FixCurrencyTypoTest extends TestCase
             ->innerJoin('lang', 'locale', 'loc', 'lang.translation_code_id = loc.id')
             ->where('loc.code = :englishLocale')
             ->setParameter('englishLocale', $this->englishLanguageLocale)
-            ->execute()
+            ->executeQuery()
             ->fetchOne();
         static::assertNotNull($englishLanguageId, 'Test failed: English language ID not found');
         $this->languageIdEnglish = $englishLanguageId;

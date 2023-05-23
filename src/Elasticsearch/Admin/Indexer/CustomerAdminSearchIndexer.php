@@ -2,6 +2,7 @@
 
 namespace Shopware\Elasticsearch\Admin\Indexer;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception;
 use Shopware\Core\Checkout\Customer\CustomerDefinition;
@@ -16,12 +17,12 @@ use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\Framework\Uuid\Uuid;
 
-/**
- * @internal
- */
 #[Package('system-settings')]
 final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
 {
+    /**
+     * @internal
+     */
     public function __construct(
         private readonly Connection $connection,
         private readonly IteratorFactory $factory,
@@ -108,7 +109,7 @@ final class CustomerAdminSearchIndexer extends AbstractAdminIndexer
                 'ids' => Uuid::fromHexToBytesList($ids),
             ],
             [
-                'ids' => Connection::PARAM_STR_ARRAY,
+                'ids' => ArrayParameterType::STRING,
             ]
         );
 

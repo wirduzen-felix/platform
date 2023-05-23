@@ -9,6 +9,7 @@ use Shopware\Core\Content\Flow\Dispatching\Aware\ContextTokenAware;
 use Shopware\Core\Content\Flow\Dispatching\StorableFlow;
 use Shopware\Core\Content\Flow\Dispatching\Storer\ContextTokenStorer;
 use Shopware\Core\Content\Test\Flow\TestFlowBusinessEvent;
+use Shopware\Core\Framework\Feature;
 
 /**
  * @package business-ops
@@ -21,8 +22,10 @@ class ContextTokenStorerTest extends TestCase
 {
     private ContextTokenStorer $storer;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
+        Feature::skipTestIfActive('v6.6.0.0', $this);
+
         $this->storer = new ContextTokenStorer();
     }
 

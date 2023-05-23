@@ -36,10 +36,6 @@ describe('Promotion v2: Visual tests', () => {
             method: 'PATCH',
         }).as('patchPromotion');
         cy.intercept({
-            url: `${Cypress.env('apiPath')}/search/promotion`,
-            method: 'POST',
-        }).as('getData');
-        cy.intercept({
             url: '/widgets/checkout/info',
             method: 'GET',
         }).as('cartInfo');
@@ -49,8 +45,6 @@ describe('Promotion v2: Visual tests', () => {
             mainMenuId: 'sw-marketing',
             subMenuId: 'sw-promotion-v2',
         });
-        cy.wait('@getData')
-            .its('response.statusCode').should('equal', 200);
         cy.get('.sw-skeleton').should('not.exist');
         cy.get('.sw-loader').should('not.exist');
         cy.get('.sw-promotion-v2-list').should('be.visible');
@@ -138,6 +132,9 @@ describe('Promotion v2: Visual tests', () => {
         );
         cy.get('#accountWidget')
             .should('have.css', 'visibility', 'hidden');
+
+        // Change text of the element to ensure consistent snapshots
+        cy.changeElementText('.line-item-delivery-date', 'Delivery period: 01/01/2018 - 03/01/2018');
 
         // Take snapshot for visual testing
         cy.takeSnapshot('[Promotion] Storefront, checkout off-canvas ', '.offcanvas');

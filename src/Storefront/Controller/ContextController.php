@@ -21,6 +21,7 @@ use Symfony\Component\Routing\RouterInterface;
 
 /**
  * @internal
+ * Do not use direct or indirect repository calls in a controller. Always use a store-api route to get or put data
  */
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 #[Package('storefront')]
@@ -47,11 +48,10 @@ class ContextController extends StorefrontController
     #[Route(path: '/checkout/language', name: 'frontend.checkout.switch-language', methods: ['POST'])]
     public function switchLanguage(Request $request, SalesChannelContext $context): RedirectResponse
     {
-        if (!$request->request->has('languageId')) {
+        $languageId = $request->request->get('languageId');
+        if (!$languageId || !\is_string($languageId)) {
             throw new MissingRequestParameterException('languageId');
         }
-
-        $languageId = $request->request->get('languageId');
 
         try {
             $newTokenResponse = $this->contextSwitchRoute->switchContext(

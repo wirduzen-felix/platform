@@ -59,6 +59,7 @@ class ProductSliderCmsElementResolver extends AbstractCmsElementResolver
             $criteria = new Criteria($products->getArrayValue());
             $criteria->addAssociation('cover');
             $criteria->addAssociation('options.group');
+            $criteria->addAssociation('manufacturer');
             $collection->add(self::STATIC_SEARCH_KEY . '_' . $slot->getUniqueIdentifier(), ProductDefinition::class, $criteria);
         }
 
@@ -160,6 +161,7 @@ class ProductSliderCmsElementResolver extends AbstractCmsElementResolver
 
         $criteria->addAssociation('cover');
         $criteria->addAssociation('options.group');
+        $criteria->addAssociation('manufacturer');
 
         return $criteria;
     }
@@ -186,6 +188,7 @@ class ProductSliderCmsElementResolver extends AbstractCmsElementResolver
         $criteria->addFilter(...$filters);
         $criteria->setLimit($limit);
         $criteria->addAssociation('options.group');
+        $criteria->addAssociation('manufacturer');
 
         // Ensure storefront presentation settings of product variants
         $criteria->addGroupField(new FieldGrouping('displayGroup'));
@@ -197,7 +200,7 @@ class ProductSliderCmsElementResolver extends AbstractCmsElementResolver
         );
 
         if ($sorting === 'random') {
-            return $this->setRandomSort($criteria);
+            return $this->addRandomSort($criteria);
         }
 
         if ($sorting) {
@@ -211,7 +214,7 @@ class ProductSliderCmsElementResolver extends AbstractCmsElementResolver
         return $criteria;
     }
 
-    private function setRandomSort(Criteria $criteria): Criteria
+    private function addRandomSort(Criteria $criteria): Criteria
     {
         $fields = [
             'id',

@@ -18,7 +18,7 @@ class StorefrontPluginConfigurationFactoryTest extends TestCase
 
     private StorefrontPluginConfigurationFactory $configFactory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->configFactory = $this->getContainer()->get(StorefrontPluginConfigurationFactory::class);
     }
@@ -137,6 +137,9 @@ class StorefrontPluginConfigurationFactoryTest extends TestCase
         };
     }
 
+    /**
+     * @param array<string, array<string, string>>$expected
+     */
     private function assertFileCollection(array $expected, FileCollection $files): void
     {
         $flatFiles = [];

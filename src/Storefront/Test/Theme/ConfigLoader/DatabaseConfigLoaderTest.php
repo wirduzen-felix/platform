@@ -28,7 +28,7 @@ class DatabaseConfigLoaderTest extends TestCase
 
     private EntityRepository $mediaRepository;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->ids = new IdsCollection();
@@ -58,7 +58,7 @@ class DatabaseConfigLoaderTest extends TestCase
      */
     public function testMediaConfigurationLoading(): void
     {
-        self::setUpMedia();
+        $this->setUpMedia();
 
         $theme = [[
             'id' => $this->ids->get('base'),
@@ -270,7 +270,7 @@ class DatabaseConfigLoaderTest extends TestCase
     /**
      * @return iterable<int|string, mixed>
      */
-    public function configurationLoadingProvider(): iterable
+    public static function configurationLoadingProvider(): iterable
     {
         yield 'Test simple inheritance' => [
             'child',

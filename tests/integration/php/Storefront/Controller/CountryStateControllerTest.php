@@ -39,7 +39,7 @@ class CountryStateControllerTest extends TestCase
 
     private SalesChannelContext $salesChannelContext;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->connection = $this->getContainer()->get(Connection::class);
 
@@ -78,11 +78,11 @@ class CountryStateControllerTest extends TestCase
 
         $dispatcher->removeSubscriber($testSubscriber);
 
-        static::assertInstanceOf(CountryStateDataPagelet::class, $testSubscriber::$testPagelet);
-        static::assertInstanceOf(Criteria::class, $testSubscriber::$criteriaEvent->getCriteria());
-        static::assertInstanceOf(Context::class, $testSubscriber::$criteriaEvent->getContext());
-        static::assertInstanceOf(Request::class, $testSubscriber::$criteriaEvent->getRequest());
-        static::assertInstanceOf(SalesChannelContext::class, $testSubscriber::$criteriaEvent->getSalesChannelContext());
+        static::assertInstanceOf(CountryStateDataPagelet::class, $testSubscriber->testPagelet);
+        static::assertInstanceOf(Criteria::class, $testSubscriber->criteriaEvent->getCriteria());
+        static::assertInstanceOf(Context::class, $testSubscriber->criteriaEvent->getContext());
+        static::assertInstanceOf(Request::class, $testSubscriber->criteriaEvent->getRequest());
+        static::assertInstanceOf(SalesChannelContext::class, $testSubscriber->criteriaEvent->getSalesChannelContext());
     }
 
     public function testCountryStateControllerHooks(): void
@@ -128,7 +128,10 @@ class CountryStateControllerTest extends TestCase
             ],
         ]], Context::createDefaultContext());
 
-        $this->countryStateController->getCountryData(new Request([], ['countryId' => $this->countryIdDE]), $this->salesChannelContext);
+        $request = new Request([], ['countryId' => $this->countryIdDE]);
+        $this->getContainer()->get('request_stack')->push($request);
+
+        $this->countryStateController->getCountryData($request, $this->salesChannelContext);
 
         $traces = $this->getContainer()->get(ScriptTraces::class)->getTraces();
 
@@ -143,9 +146,9 @@ class CountryStateControllerTest extends TestCase
  */
 class CountryStateControllerTestSubscriber implements EventSubscriberInterface
 {
-    public static CountryStateDataPagelet $testPagelet;
+    public CountryStateDataPagelet $testPagelet;
 
-    public static CountryStateDataPageletCriteriaEvent $criteriaEvent;
+    public CountryStateDataPageletCriteriaEvent $criteriaEvent;
 
     public static function getSubscribedEvents(): array
     {
@@ -157,11 +160,11 @@ class CountryStateControllerTestSubscriber implements EventSubscriberInterface
 
     public function onPageletLoaded(CountryStateDataPageletLoadedEvent $event): void
     {
-        self::$testPagelet = $event->getPagelet();
+        $this->testPagelet = $event->getPagelet();
     }
 
     public function onCriteria(CountryStateDataPageletCriteriaEvent $event): void
     {
-        self::$criteriaEvent = $event;
+        $this->criteriaEvent = $event;
     }
 }

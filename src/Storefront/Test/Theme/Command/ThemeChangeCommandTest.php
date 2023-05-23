@@ -32,7 +32,7 @@ class ThemeChangeCommandTest extends TestCase
 
     private EntityRepository $themeRepository;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->salesChannelRepository = $this->getContainer()->get('sales_channel.repository');
         $this->themeRepository = $this->getContainer()->get('theme.repository');
@@ -70,8 +70,7 @@ class ThemeChangeCommandTest extends TestCase
 
         $themeService = $this->createMock(ThemeService::class);
         $themeService->expects(static::exactly(\count($salesChannels)))
-            ->method('assignTheme')
-            ->withConsecutive(...$arguments);
+            ->method('assignTheme');
 
         $themeChangeCommand = new ThemeChangeCommand(
             $themeService,

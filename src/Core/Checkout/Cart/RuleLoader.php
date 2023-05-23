@@ -13,11 +13,14 @@ use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 
 /**
- * @internal
+ * @final Depend on the AbstractRuleLoader which is the definition of public API for this scope
  */
 #[Package('checkout')]
 class RuleLoader extends AbstractRuleLoader
 {
+    /**
+     * @internal
+     */
     public function __construct(private readonly EntityRepository $repository)
     {
     }

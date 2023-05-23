@@ -173,9 +173,13 @@ class ElasticsearchProductDefinitionTest extends TestCase
                 ],
                 'releaseDate' => [
                     'type' => 'date',
+                    'format' => 'yyyy-MM-dd HH:mm:ss.000||strict_date_optional_time||epoch_millis',
+                    'ignore_malformed' => true,
                 ],
                 'createdAt' => [
                     'type' => 'date',
+                    'format' => 'yyyy-MM-dd HH:mm:ss.000||strict_date_optional_time||epoch_millis',
+                    'ignore_malformed' => true,
                 ],
                 'sales' => [
                     'type' => 'long',
@@ -209,7 +213,7 @@ class ElasticsearchProductDefinitionTest extends TestCase
                 'visibilities' => [
                     'type' => 'nested',
                     'properties' => [
-                        'id' => [
+                        'salesChannelId' => [
                             'type' => 'keyword',
                             'normalizer' => 'sw_lowercase_normalizer',
                         ],

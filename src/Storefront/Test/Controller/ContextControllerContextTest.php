@@ -11,7 +11,6 @@ use Shopware\Core\System\SalesChannel\Event\SalesChannelContextSwitchEvent;
 use Shopware\Storefront\Framework\Routing\Router;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
-use Symfony\Component\Routing\RequestContext;
 
 /**
  * @internal
@@ -34,16 +33,13 @@ class ContextControllerContextTest extends TestCase
     {
         $this->router = $this->getContainer()->get('router');
 
-        /** @var RequestContext $context */
-        $context = $this->router->getContext();
-
         $this->languageId = Uuid::randomHex();
         $localeId = Uuid::randomHex();
 
         $this->defaultBaseUrl = $_SERVER['APP_URL'];
         $this->testBaseUrl = $_SERVER['APP_URL'] . '/tst-TST';
 
-        $this->getContainer()->get(Connection::class)->executeUpdate('DELETE FROM sales_channel');
+        $this->getContainer()->get(Connection::class)->executeStatement('DELETE FROM sales_channel');
 
         $domains = [
             [
@@ -133,7 +129,7 @@ class ContextControllerContextTest extends TestCase
         $dispatcher->removeSubscriber($contextSubscriber);
 
         static::assertSame(200, $response->getStatusCode(), $response->getContent() ?: '');
-        static::assertSame($this->languageId, $contextSubscriber::$switchEvent->getRequestDataBag()->get('languageId'));
+        static::assertSame($this->languageId, $contextSubscriber->switchEvent->getRequestDataBag()->get('languageId'));
     }
 }
 
@@ -142,7 +138,7 @@ class ContextControllerContextTest extends TestCase
  */
 class ContextControllerTestSubscriber implements EventSubscriberInterface
 {
-    public static SalesChannelContextSwitchEvent $switchEvent;
+    public SalesChannelContextSwitchEvent $switchEvent;
 
     public static function getSubscribedEvents(): array
     {
@@ -153,6 +149,6 @@ class ContextControllerTestSubscriber implements EventSubscriberInterface
 
     public function onSwitch(SalesChannelContextSwitchEvent $event): void
     {
-        self::$switchEvent = $event;
+        $this->switchEvent = $event;
     }
 }

@@ -13,12 +13,13 @@ use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\Log\Package;
-use Shopware\Core\Framework\Routing\Exception\MissingRequestParameterException;
+use Shopware\Core\Framework\Routing\RoutingException;
 use Shopware\Core\Framework\Validation\DataBag\DataBag;
 use Shopware\Core\Framework\Validation\DataBag\QueryDataBag;
 use Shopware\Core\Framework\Validation\DataBag\RequestDataBag;
 use Shopware\Core\Framework\Validation\DataValidationDefinition;
 use Shopware\Core\Framework\Validation\Exception\ConstraintViolationException;
+use Shopware\Core\System\SalesChannel\Aggregate\SalesChannelDomain\SalesChannelDomainEntity;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Shopware\Storefront\Framework\AffiliateTracking\AffiliateTrackingListener;
@@ -38,6 +39,7 @@ use Symfony\Component\Validator\Constraints\NotBlank;
 
 /**
  * @internal
+ * Do not use direct or indirect repository calls in a controller. Always use a store-api route to get or put data
  */
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 #[Package('customer-order')]
@@ -71,6 +73,7 @@ class RegisterController extends StorefrontController
         }
 
         $redirect = $request->query->get('redirectTo', 'frontend.account.home.page');
+        $errorRoute = $request->attributes->get('_route');
 
         $page = $this->loginPageLoader->load($request, $context);
 
@@ -79,6 +82,7 @@ class RegisterController extends StorefrontController
         return $this->renderStorefront('@Storefront/storefront/page/account/register/index.html.twig', [
             'redirectTo' => $redirect,
             'redirectParameters' => $request->get('redirectParameters', json_encode([])),
+            'errorRoute' => $errorRoute,
             'page' => $page,
             'data' => $data,
         ]);
@@ -108,6 +112,7 @@ class RegisterController extends StorefrontController
         return $this->renderStorefront('@Storefront/storefront/page/account/customer-group-register/index.html.twig', [
             'redirectTo' => $redirect,
             'redirectParameters' => $request->get('redirectParameters', json_encode([])),
+            'errorRoute' => $request->attributes->get('_route'),
             'errorParameters' => json_encode(['customerGroupId' => $customerGroupId], \JSON_THROW_ON_ERROR),
             'page' => $page,
             'data' => $data,
@@ -119,6 +124,7 @@ class RegisterController extends StorefrontController
     {
         /** @var string $redirect */
         $redirect = $request->get('redirectTo', 'frontend.checkout.confirm.page');
+        $errorRoute = $request->attributes->get('_route');
 
         if ($context->getCustomer()) {
             return $this->redirectToRoute($redirect);
@@ -134,7 +140,7 @@ class RegisterController extends StorefrontController
 
         return $this->renderStorefront(
             '@Storefront/storefront/page/checkout/address/index.html.twig',
-            ['redirectTo' => $redirect, 'page' => $page, 'data' => $data]
+            ['redirectTo' => $redirect, 'errorRoute' => $errorRoute, 'page' => $page, 'data' => $data]
         );
     }
 
@@ -168,7 +174,7 @@ class RegisterController extends StorefrontController
             );
         } catch (ConstraintViolationException $formViolations) {
             if (!$request->request->has('errorRoute')) {
-                throw new MissingRequestParameterException('errorRoute');
+                throw RoutingException::missingRequestParameter('errorRoute');
             }
 
             $params = $this->decodeParam($request, 'errorParameters');
@@ -301,6 +307,7 @@ class RegisterController extends StorefrontController
         $criteria->addFilter(new EqualsFilter('salesChannelId', $context->getSalesChannel()->getId()));
         $criteria->setLimit(1);
 
+        /** @var SalesChannelDomainEntity|null $domain */
         $domain = $this->domainRepository
             ->search($criteria, $context->getContext())
             ->first();

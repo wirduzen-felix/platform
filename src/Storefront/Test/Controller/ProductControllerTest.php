@@ -43,7 +43,7 @@ class ProductControllerTest extends TestCase
 
     private TestDataCollection $ids;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->ids = new TestDataCollection();
 
@@ -290,7 +290,7 @@ class ProductControllerTest extends TestCase
     /**
      * @return iterable<string, array<int, string|bool>>
      */
-    public function variantProvider(): iterable
+    public static function variantProvider(): iterable
     {
         yield 'test color: red - size: xl' => ['a.1', true, false, true, true, true]; // a.1 all options should be normal
         yield 'test color: green - size: xl' => ['a.2', true, false, true, true, false]; // a.2 green and xl should be gray

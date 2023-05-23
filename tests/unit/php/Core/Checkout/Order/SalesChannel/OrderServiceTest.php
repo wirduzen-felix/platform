@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace unit\php\Core\Checkout\Order\SalesChannel;
+namespace Shopware\Tests\Unit\Core\Checkout\Order\SalesChannel;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -35,7 +35,7 @@ class OrderServiceTest extends TestCase
 
     private OrderService $orderService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $eventDispatcher = $this->createMock(EventDispatcherInterface::class);
         $this->cartService = $this->createMock(CartService::class);

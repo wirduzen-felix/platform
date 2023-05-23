@@ -16,7 +16,8 @@ export default {
     toISODate,
 };
 
-interface CurrencyOptions extends Intl.NumberFormatOptions {
+/* @private */
+export interface CurrencyOptions extends Intl.NumberFormatOptions {
     language?: string
 }
 
@@ -56,6 +57,10 @@ export function currency(
     return val.toLocaleString((additionalOptions.language ?? Shopware.State.get('session').currentLocale) ?? 'en-US', opts);
 }
 
+interface DateFilterOptions extends Intl.DateTimeFormatOptions {
+    skipTimezoneConversion?: boolean
+}
+
 /**
  * Formats a Date object to a localized string
  *
@@ -64,7 +69,7 @@ export function currency(
  * @returns {string}
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
-export function date(val: string, options: Intl.DateTimeFormatOptions = {}): string {
+export function date(val: string, options: DateFilterOptions = {}): string {
     // should return an empty string when no date is given
     if (!val) {
         return '';
@@ -85,7 +90,7 @@ export function date(val: string, options: Intl.DateTimeFormatOptions = {}): str
     const userTimeZone = (Shopware?.State?.get('session')?.currentUser?.timeZone) ?? 'UTC';
 
     const dateTimeFormatter = new Intl.DateTimeFormat(lastKnownLang, {
-        timeZone: userTimeZone,
+        timeZone: options.skipTimezoneConversion ? undefined : userTimeZone,
         year: 'numeric',
         month: 'long',
         day: 'numeric',

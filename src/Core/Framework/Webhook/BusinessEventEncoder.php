@@ -15,6 +15,9 @@ use Shopware\Core\Framework\Event\EventData\ScalarValueType;
 use Shopware\Core\Framework\Event\FlowEventAware;
 use Shopware\Core\Framework\Log\Package;
 
+/**
+ * @deprecated tag:v6.6.0 - Will be internal - reason:visibility-change
+ */
 #[Package('core')]
 class BusinessEventEncoder
 {
@@ -32,7 +35,7 @@ class BusinessEventEncoder
      */
     public function encode(FlowEventAware $event): array
     {
-        return $this->encodeType($event::getAvailableData()->toArray(), $event);
+        return $this->encodeType($event->getAvailableData()->toArray(), $event);
     }
 
     /**
@@ -122,12 +125,12 @@ class BusinessEventEncoder
         if (\is_object($object)) {
             $getter = 'get' . ucfirst($propertyName);
             if (method_exists($object, $getter)) {
-                return $object->$getter();
+                return $object->$getter(); /* @phpstan-ignore-line */
             }
 
             $isser = 'is' . ucfirst($propertyName);
             if (method_exists($object, $isser)) {
-                return $object->$isser();
+                return $object->$isser(); /* @phpstan-ignore-line */
             }
         }
 

@@ -16,6 +16,7 @@ const WebpackCopyAfterBuildPlugin = require('@shopware-ag/webpack-copy-after-bui
 const ForkTsCheckerWebpackPlugin = require('fork-ts-checker-webpack-plugin');
 const BundleAnalyzerPlugin = require('webpack-bundle-analyzer').BundleAnalyzerPlugin;
 const WebpackDynamicPublicPathPlugin = require('webpack-dynamic-public-path');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
@@ -122,7 +123,7 @@ const pluginEntries = (() => {
     const pluginDefinition = JSON.parse(fs.readFileSync(pluginFile, 'utf8'));
 
     return Object.entries(pluginDefinition)
-        .filter(([name, definition]) => !!definition.administration && !!definition.administration.entryFilePath)
+        .filter(([name, definition]) => !!definition.administration && !!definition.administration.entryFilePath && !process.env.hasOwnProperty('SKIP_' + definition.technicalName.toUpperCase().replace(/-/g, '_')))
         .map(([name, definition]) => {
             console.log(chalk.green(`# Plugin "${name}": Injected successfully`));
 
@@ -480,6 +481,19 @@ const baseConfig = ({ pluginPath, pluginFilepath }) => ({
             }
             return [];
         })(),
+
+        /**
+         * All files inside webpack's output.path directory will be removed once, but the
+         * directory itself will not be. If using webpack 4+'s default configuration,
+         * everything under <PROJECT_DIR>/dist/ will be removed.
+         * Use cleanOnceBeforeBuildPatterns to override this behavior.
+         *
+         * During rebuilds, all webpack assets that are not used anymore
+         * will be removed automatically.
+         *
+         * See `Options and Defaults` for information
+         */
+        new CleanWebpackPlugin(),
     ],
 });
 

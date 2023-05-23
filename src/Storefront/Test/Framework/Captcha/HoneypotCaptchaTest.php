@@ -20,7 +20,7 @@ class HoneypotCaptchaTest extends TestCase
 
     private HoneypotCaptcha $captcha;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->captcha = $this->getContainer()->get(HoneypotCaptcha::class);
     }
@@ -42,7 +42,7 @@ class HoneypotCaptchaTest extends TestCase
         }
     }
 
-    public function requestDataProvider(): array
+    public static function requestDataProvider(): array
     {
         return [
             [

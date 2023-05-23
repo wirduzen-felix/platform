@@ -14,7 +14,7 @@ describe('src/core/service/timezone.service.ts', () => {
             expect(timezoneService.loadTimezones).toBeDefined();
         });
 
-        it('returns data correctly', () => {
+        it('returns data correctly', async () => {
             jest.mock('@vvo/tzdb/time-zones-names.json', () => ({
                 default: [
                     'America/New_York',
@@ -25,13 +25,12 @@ describe('src/core/service/timezone.service.ts', () => {
 
             const timezoneService = new TimezoneService();
 
-            timezoneService.loadTimezones().then((result) => {
-                expect(result.default).toEqual(expect.arrayContaining([
-                    'America/New_York',
-                    'Europe/Berlin',
-                    'Asia/Ho_Chi_Minh',
-                ]));
-            });
+            const timeZoneResult = await timezoneService.loadTimezones();
+            expect(timeZoneResult.default).toEqual(expect.arrayContaining([
+                'America/New_York',
+                'Europe/Berlin',
+                'Asia/Ho_Chi_Minh',
+            ]));
         });
     });
 
@@ -47,9 +46,9 @@ describe('src/core/service/timezone.service.ts', () => {
         it('returns data correctly', () => {
             const timezoneService = new TimezoneService();
 
-            expect(timezoneService.toUTCTime(0)).toEqual('(UTC)');
-            expect(timezoneService.toUTCTime(120)).toEqual('(UTC +02:00)');
-            expect(timezoneService.toUTCTime(-120)).toEqual('(UTC -02:00)');
+            expect(timezoneService.toUTCTime(0)).toBe('(UTC)');
+            expect(timezoneService.toUTCTime(120)).toBe('(UTC +02:00)');
+            expect(timezoneService.toUTCTime(-120)).toBe('(UTC -02:00)');
         });
     });
 });

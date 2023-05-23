@@ -16,7 +16,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * @internal
- * @internal
+ * Do not use direct or indirect repository calls in a controller. Always use a store-api route to get or put data
  */
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 #[Package('core')]
@@ -61,8 +61,11 @@ class ScriptController extends StorefrontController
         return $symfonyResponse;
     }
 
-    public function renderStorefront(string $view, array $parameters = []): Response
+    /**
+     * @param array<string, mixed> $parameters
+     */
+    public function renderStorefrontForScript(string $view, array $parameters = []): Response
     {
-        return parent::renderStorefront($view, $parameters);
+        return $this->renderStorefront($view, $parameters);
     }
 }

@@ -22,22 +22,19 @@ async function createWrapper() {
                 },
                 generate: () => null,
             },
-        }
+        },
     });
 }
 
 describe('sw-bulk-edit-save-modal-process', () => {
     let wrapper;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         if (Shopware.State.get('swBulkEdit')) {
             Shopware.State.unregisterModule('swBulkEdit');
         }
 
         Shopware.State.registerModule('swBulkEdit', swBulkEditState);
-    });
-
-    beforeEach(async () => {
         wrapper = await createWrapper();
     });
 

@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\System\SalesChannel\Validation;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\Command\DeleteCommand;
@@ -153,7 +154,7 @@ class SalesChannelValidator implements EventSubscriberInterface
     }
 
     /**
-     * @param array<string, list<string>> $mapping
+     * @param array<string, array<string, list<string>>> $mapping
      */
     private function validateLanguages(array $mapping, PreWriteValidationEvent $event): void
     {
@@ -220,13 +221,13 @@ class SalesChannelValidator implements EventSubscriberInterface
     }
 
     /**
-     * @param array<string, mixed> $channel
+     * @param array<string, list<string>> $channel
      *
-     * @return array<string, mixed>
+     * @return list<string>
      */
     private function getDuplicates(array $channel): array
     {
-        return array_intersect($channel['state'], $channel['inserts']);
+        return array_values(array_intersect($channel['state'], $channel['inserts']));
     }
 
     /**
@@ -258,7 +259,7 @@ class SalesChannelValidator implements EventSubscriberInterface
     }
 
     /**
-     * @param array<string, mixed> $duplicates
+     * @param array<string, list<string>> $duplicates
      */
     private function writeDuplicateViolationExceptions(array $duplicates, PreWriteValidationEvent $event): void
     {
@@ -362,7 +363,7 @@ class SalesChannelValidator implements EventSubscriberInterface
                 ON mapping.sales_channel_id = sales_channel.id
                 WHERE sales_channel.id IN (:ids)',
             ['ids' => Uuid::fromHexToBytesList($salesChannelIds)],
-            ['ids' => Connection::PARAM_STR_ARRAY]
+            ['ids' => ArrayParameterType::STRING]
         );
 
         return $result;

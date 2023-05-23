@@ -3,6 +3,7 @@ import swOrderNewCustomerModal from 'src/module/sw-order/component/sw-order-new-
 import 'src/app/component/base/sw-button';
 import 'src/app/component/base/sw-tabs';
 import 'src/app/component/base/sw-tabs-item';
+import ShopwareError from 'src/core/data/ShopwareError';
 
 /**
  * @package customer-order
@@ -20,7 +21,7 @@ async function createWrapper() {
         localVue,
         stubs: {
             'sw-modal': {
-                template: '<div class="sw-modal"><slot></slot><slot name="modal-footer"></slot></div>'
+                template: '<div class="sw-modal"><slot></slot><slot name="modal-footer"></slot></div>',
             },
             'sw-button': await Shopware.Component.build('sw-button'),
             'sw-tabs': await Shopware.Component.build('sw-tabs'),
@@ -40,7 +41,7 @@ async function createWrapper() {
                                     id: '1',
                                     addresses: new EntityCollection('/customer_address', 'customer_address', Context.api, null, []),
                                 };
-                            }
+                            },
                         };
                     }
 
@@ -49,12 +50,12 @@ async function createWrapper() {
                             searchIds: () => Promise.resolve({
                                 total: 1,
                                 data: ['1'],
-                            })
+                            }),
                         };
                     }
 
                     return {
-                        create: () => Promise.resolve()
+                        create: () => Promise.resolve(),
                     };
                 },
             },
@@ -66,7 +67,7 @@ async function createWrapper() {
                     return Promise.resolve({
                         'core.loginRegistration.passwordMinLength': 8,
                     });
-                }
+                },
             },
             customerValidationService: {
                 checkCustomerEmail: () => Promise.resolve(),
@@ -124,11 +125,11 @@ describe('src/module/sw-order/component/sw-order-new-customer-modal', () => {
             },
         });
 
-        expect(await wrapper.vm.languageId).toEqual('1');
+        expect(await wrapper.vm.languageId).toBe('1');
 
         const context = await wrapper.vm.onSave();
 
-        expect(context.languageId).toEqual('1');
+        expect(context.languageId).toBe('1');
     });
 
     it('should keep context when sales channel exists language compared to API language', async () => {
@@ -158,5 +159,35 @@ describe('src/module/sw-order/component/sw-order-new-customer-modal', () => {
         const context = await wrapper.vm.onSave();
 
         expect(context.languageId).toEqual(Shopware.Context.api.languageId);
+    });
+
+    it('should show error inside sw-tabs-item component', async () => {
+        let swDetailsTab = wrapper.findAll('.sw-tabs-item').at(0);
+        let swBillingAddressTab = wrapper.findAll('.sw-tabs-item').at(1);
+
+        expect(swDetailsTab.find('sw-icon-stub').exists()).toBe(false);
+        expect(swBillingAddressTab.find('sw-icon-stub').exists()).toBe(false);
+
+        await Shopware.State.dispatch('error/addApiError', {
+            expression: 'customer.1.email',
+            error: new ShopwareError({
+                code: 'c1051bb4-d103-4f74-8988-acbcafc7fdc3',
+                detail: 'This value should not be blank.',
+                status: '400',
+                template: 'This value should not be blank.',
+            }),
+        });
+
+        wrapper.vm.customerRepository.save = jest.fn(() => Promise.resolve());
+
+        const saveButton = wrapper.find('.sw-button--primary');
+
+        await saveButton.trigger('click');
+
+        swDetailsTab = wrapper.findAll('.sw-tabs-item').at(0);
+        swBillingAddressTab = wrapper.findAll('.sw-tabs-item').at(1);
+
+        expect(swDetailsTab.find('sw-icon-stub[name=solid-exclamation-circle]').exists()).toBe(true);
+        expect(swBillingAddressTab.find('sw-icon-stub').exists()).toBe(false);
     });
 });

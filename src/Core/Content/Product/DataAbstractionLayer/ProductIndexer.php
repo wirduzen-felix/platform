@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Content\Product\DataAbstractionLayer;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\Events\ProductIndexerEvent;
 use Shopware\Core\Content\Product\ProductDefinition;
@@ -24,9 +25,6 @@ use Shopware\Core\Profiling\Profiler;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-/**
- * @phpstan-import-type Offset from IterableQuery
- */
 #[Package('core')]
 class ProductIndexer extends EntityIndexer
 {
@@ -214,7 +212,7 @@ class ProductIndexer extends EntityIndexer
             $this->connection->executeStatement(
                 'UPDATE product SET updated_at = :now WHERE id IN (:ids)',
                 ['ids' => Uuid::fromHexToBytesList($ids), 'now' => (new \DateTime())->format(Defaults::STORAGE_DATE_TIME_FORMAT)],
-                ['ids' => Connection::PARAM_STR_ARRAY]
+                ['ids' => ArrayParameterType::STRING]
             );
         });
 
@@ -252,7 +250,7 @@ class ProductIndexer extends EntityIndexer
         $childrenIds = $this->connection->fetchFirstColumn(
             'SELECT DISTINCT LOWER(HEX(id)) as id FROM product WHERE parent_id IN (:ids)',
             ['ids' => Uuid::fromHexToBytesList($ids)],
-            ['ids' => Connection::PARAM_STR_ARRAY]
+            ['ids' => ArrayParameterType::STRING]
         );
 
         return array_unique(array_filter($childrenIds));
@@ -268,7 +266,7 @@ class ProductIndexer extends EntityIndexer
         $parentIds = $this->connection->fetchFirstColumn(
             'SELECT DISTINCT LOWER(HEX(product.parent_id)) as id FROM product WHERE id IN (:ids)',
             ['ids' => Uuid::fromHexToBytesList($ids)],
-            ['ids' => Connection::PARAM_STR_ARRAY]
+            ['ids' => ArrayParameterType::STRING]
         );
 
         return array_unique(array_filter($parentIds));
@@ -287,12 +285,12 @@ class ProductIndexer extends EntityIndexer
              WHERE `id` IN (:ids)
              AND `parent_id` IS NULL',
             ['ids' => Uuid::fromHexToBytesList($ids)],
-            ['ids' => Connection::PARAM_STR_ARRAY]
+            ['ids' => ArrayParameterType::STRING]
         );
     }
 
     /**
-     * @param Offset|null $offset
+     * @param array{offset: int|null}|null $offset
      */
     private function getIterator(?array $offset): IterableQuery
     {

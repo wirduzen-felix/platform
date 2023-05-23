@@ -16,12 +16,12 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsAnyFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\NotFilter;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\CommandTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
+use Shopware\Core\Test\CollectingMessageBus;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Messenger\Envelope;
-use Symfony\Component\Messenger\MessageBusInterface;
 
 /**
  * @internal
@@ -287,25 +287,28 @@ class GenerateThumbnailsCommandTest extends TestCase
         $affectedMediaIds = [...array_combine($this->initialMediaIds, $this->initialMediaIds), ...$newMedia->getIds()];
 
         $expectedMessageStrict = new UpdateThumbnailsMessage();
-        $expectedMessageStrict->withContext($this->context);
+
+        if (Feature::isActive('v6.6.0.0')) {
+            $expectedMessageStrict->setContext($this->context);
+        } else {
+            $expectedMessageStrict->withContext($this->context);
+        }
+
         $expectedMessageStrict->setIsStrict(true);
         $expectedMessageStrict->setMediaIds($affectedMediaIds);
 
         $expectedMessageNonStrict = new UpdateThumbnailsMessage();
-        $expectedMessageNonStrict->withContext($this->context);
+
+        if (Feature::isActive('v6.6.0.0')) {
+            $expectedMessageNonStrict->setContext($this->context);
+        } else {
+            $expectedMessageNonStrict->withContext($this->context);
+        }
+
         $expectedMessageNonStrict->setIsStrict(false);
         $expectedMessageNonStrict->setMediaIds($affectedMediaIds);
 
-        $messageBusMock = $this->getMockBuilder(MessageBusInterface::class)
-            ->disableOriginalConstructor()->getMock();
-        $messageBusMock->expects(static::exactly(4))->method('dispatch')
-            ->withConsecutive(
-                [$expectedMessageStrict, static::anything()],
-                [$expectedMessageNonStrict, static::anything()],
-                [$expectedMessageNonStrict, static::anything()],
-                [$expectedMessageStrict, static::anything()],
-            )
-            ->willReturnCallback(fn ($m, $s) => Envelope::wrap($m, $s));
+        $messageBusMock = new CollectingMessageBus();
 
         $command = new GenerateThumbnailsCommand(
             $this->getContainer()->get(ThumbnailService::class),
@@ -318,6 +321,14 @@ class GenerateThumbnailsCommandTest extends TestCase
         $this->runCommand($command, new StringInput('--async'), $output);
         $this->runCommand($command, new StringInput('--async'), $output);
         $this->runCommand($command, new StringInput('--strict --async'), $output);
+
+        $envelopes = $messageBusMock->getMessages();
+        static::assertCount(4, $envelopes);
+
+        static::assertEquals($expectedMessageStrict, $envelopes[0]->getMessage());
+        static::assertEquals($expectedMessageNonStrict, $envelopes[1]->getMessage());
+        static::assertEquals($expectedMessageNonStrict, $envelopes[2]->getMessage());
+        static::assertEquals($expectedMessageStrict, $envelopes[3]->getMessage());
     }
 
     protected function assertThumbnailExists(MediaEntity $media, MediaThumbnailEntity $thumbnail): void

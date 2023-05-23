@@ -30,7 +30,7 @@ class FindProductVariantRouteTest extends TestCase
 
     private IdsCollection $ids;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->productRepositoryMock = $this->createMock(SalesChannelRepository::class);
         $this->route = new FindProductVariantRoute($this->productRepositoryMock);
@@ -126,16 +126,7 @@ class FindProductVariantRouteTest extends TestCase
 
         $context = Context::createDefaultContext();
 
-        $this->productRepositoryMock->method('searchIds')->withConsecutive(
-            [
-                $criteria,
-                $this->createMock(SalesChannelContext::class),
-            ],
-            [
-                $criteria2,
-                $this->createMock(SalesChannelContext::class),
-            ],
-        )
+        $this->productRepositoryMock->method('searchIds')
             ->willReturnOnConsecutiveCalls(
                 new IdSearchResult(
                     0,
@@ -190,16 +181,7 @@ class FindProductVariantRouteTest extends TestCase
 
         $context = Context::createDefaultContext();
 
-        $this->productRepositoryMock->method('searchIds')->withConsecutive(
-            [
-                $criteria,
-                $this->createMock(SalesChannelContext::class),
-            ],
-            [
-                $criteria2,
-                $this->createMock(SalesChannelContext::class),
-            ],
-        )
+        $this->productRepositoryMock->method('searchIds')
             ->willReturnOnConsecutiveCalls(
                 new IdSearchResult(
                     0,

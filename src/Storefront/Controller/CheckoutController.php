@@ -5,6 +5,7 @@ namespace Shopware\Storefront\Controller;
 use Shopware\Core\Checkout\Cart\Error\Error;
 use Shopware\Core\Checkout\Cart\Error\ErrorCollection;
 use Shopware\Core\Checkout\Cart\Exception\InvalidCartException;
+use Shopware\Core\Checkout\Cart\SalesChannel\AbstractCartLoadRoute;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\Checkout\Customer\SalesChannel\AbstractLogoutRoute;
 use Shopware\Core\Checkout\Order\Exception\EmptyCartException;
@@ -39,6 +40,7 @@ use Symfony\Component\Routing\Annotation\Route;
 
 /**
  * @internal
+ * Do not use direct or indirect repository calls in a controller. Always use a store-api route to get or put datas
  */
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 #[Package('storefront')]
@@ -58,7 +60,8 @@ class CheckoutController extends StorefrontController
         private readonly PaymentService $paymentService,
         private readonly OffcanvasCartPageLoader $offcanvasCartPageLoader,
         private readonly SystemConfigService $config,
-        private readonly AbstractLogoutRoute $logoutRoute
+        private readonly AbstractLogoutRoute $logoutRoute,
+        private readonly AbstractCartLoadRoute $cartLoadRoute
     ) {
     }
 
@@ -85,6 +88,12 @@ class CheckoutController extends StorefrontController
         $cartErrors->clear();
 
         return $this->renderStorefront('@Storefront/storefront/page/checkout/cart/index.html.twig', ['page' => $page]);
+    }
+
+    #[Route(path: '/checkout/cart.json', name: 'frontend.checkout.cart.json', methods: ['GET'], options: ['seo' => false], defaults: ['XmlHttpRequest' => true])]
+    public function cartJson(Request $request, SalesChannelContext $context): Response
+    {
+        return $this->cartLoadRoute->load($request, $context);
     }
 
     #[Route(path: '/checkout/confirm', name: 'frontend.checkout.confirm.page', options: ['seo' => false], defaults: ['XmlHttpRequest' => true, '_noStore' => true], methods: ['GET'])]

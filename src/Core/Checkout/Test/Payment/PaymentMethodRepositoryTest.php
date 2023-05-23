@@ -29,7 +29,7 @@ class PaymentMethodRepositoryTest extends TestCase
 
     private string $paymentMethodId;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->paymentRepository = $this->getContainer()->get('payment_method.repository');
         $this->paymentMethodId = Uuid::randomHex();
@@ -232,7 +232,7 @@ class PaymentMethodRepositoryTest extends TestCase
             /** @var WriteConstraintViolationException $constraintViolation */
             $constraintViolation = $e->getExceptions()[0];
             static::assertInstanceOf(WriteConstraintViolationException::class, $constraintViolation);
-            static::assertEquals('/name', $constraintViolation->getViolations()[0]->getPropertyPath());
+            static::assertEquals('/name', $constraintViolation->getViolations()->get(0)->getPropertyPath());
         }
     }
 

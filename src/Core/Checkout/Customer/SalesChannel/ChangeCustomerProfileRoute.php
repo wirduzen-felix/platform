@@ -72,7 +72,7 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
 
         $this->validator->validate($data->all(), $validation);
 
-        $customerData = $data->only('firstName', 'lastName', 'salutationId', 'title', 'company');
+        $customerData = $data->only('firstName', 'lastName', 'salutationId', 'title', 'company', 'accountType');
 
         if ($vatIds) {
             $customerData['vatIds'] = $data->get('vatIds');
@@ -132,6 +132,9 @@ class ChangeCustomerProfileRoute extends AbstractChangeCustomerProfileRoute
         if (!$birthdayDay || !$birthdayMonth || !$birthdayYear) {
             return null;
         }
+        \assert(\is_numeric($birthdayDay));
+        \assert(\is_numeric($birthdayMonth));
+        \assert(\is_numeric($birthdayYear));
 
         return new \DateTime(sprintf(
             '%s-%s-%s',

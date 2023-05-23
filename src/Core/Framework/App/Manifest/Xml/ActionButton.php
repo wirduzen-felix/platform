@@ -27,7 +27,7 @@ class ActionButton extends XmlElement
     protected string $url;
 
     /**
-     * @param array<string, string> $data
+     * @param array<int|string, mixed> $data
      */
     private function __construct(array $data)
     {
@@ -89,16 +89,15 @@ class ActionButton extends XmlElement
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array<int|string, mixed>
      */
     private static function parse(\DOMElement $element): array
     {
         $values = [];
 
-        if (is_iterable($element->attributes)) {
-            foreach ($element->attributes as $attribute) {
-                $values[$attribute->name] = XmlReader::phpize($attribute->value);
-            }
+        foreach ($element->attributes ?? [] as $attribute) {
+            \assert($attribute instanceof \DOMAttr);
+            $values[$attribute->name] = XmlReader::phpize($attribute->value);
         }
 
         foreach ($element->childNodes as $child) {

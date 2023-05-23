@@ -20,12 +20,12 @@ class CachedResolvedConfigLoaderInvalidatorTest extends TestCase
 {
     private CachedResolvedConfigLoaderInvalidator $cachedResolvedConfigLoaderInvalidator;
 
-    private mixed $logger;
+    private MockedCacheInvalidator $cacheInvalidator;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
-        $this->logger = $this->createMock(CacheInvalidator::class);
-        $this->cachedResolvedConfigLoaderInvalidator = new CachedResolvedConfigLoaderInvalidator($this->logger);
+        $this->cacheInvalidator = new MockedCacheInvalidator();
+        $this->cachedResolvedConfigLoaderInvalidator = new CachedResolvedConfigLoaderInvalidator($this->cacheInvalidator);
     }
 
     public function testGetSubscribedEvents(): void
@@ -47,15 +47,47 @@ class CachedResolvedConfigLoaderInvalidatorTest extends TestCase
         $event = new ThemeAssignedEvent($themeId, $salesChannelId);
         $name = 'theme-config-' . $themeId;
 
-        $snippetSetCacheKeys = ['translation.catalog.' . $salesChannelId];
-
         $expectedInvalidatedTags = [
-            [[$name]],
-            [[CachedDomainLoader::CACHE_KEY]],
-            [$snippetSetCacheKeys, true],
+            $name,
+            CachedDomainLoader::CACHE_KEY,
+            'translation.catalog.' . $salesChannelId,
         ];
 
-        $this->logger->expects(static::exactly(\count($expectedInvalidatedTags)))->method('invalidate')->withConsecutive(...$expectedInvalidatedTags);
         $this->cachedResolvedConfigLoaderInvalidator->assigned($event);
+
+        static::assertEquals(
+            $expectedInvalidatedTags,
+            $this->cacheInvalidator->getInvalidatedTags()
+        );
+    }
+}
+
+/**
+ * @internal
+ *
+ * @phpstan-ignore-next-line
+ */
+class MockedCacheInvalidator extends CacheInvalidator
+{
+    /**
+     * @var array<string>
+     */
+    private array $invalidatedTags = [];
+
+    public function __construct()
+    {
+    }
+
+    public function invalidate(array $tags, bool $force = false): void
+    {
+        $this->invalidatedTags = array_merge($this->invalidatedTags, $tags);
+    }
+
+    /**
+     * @return array<string>
+     */
+    public function getInvalidatedTags(): array
+    {
+        return $this->invalidatedTags;
     }
 }

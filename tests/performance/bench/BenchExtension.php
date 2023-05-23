@@ -16,11 +16,11 @@ class BenchExtension implements ExtensionInterface
 {
     private ?string $runGroup = null;
 
-    private OptionsResolver $resolver;
+    private ?OptionsResolver $resolver = null;
 
     public function load(Container $container): void
     {
-        if (!isset($this->resolver)) {
+        if ($this->resolver === null) {
             throw new \Exception(self::class . '::configure must be called before running the load method');
         }
 
@@ -59,7 +59,7 @@ class BenchExtension implements ExtensionInterface
             }
 
             if (
-                is_subclass_of($currentFixtureClass, GroupAwareExtension::class)
+                is_subclass_of($currentFixtureClass, AbstractGroupAwareExtension::class)
                 && \constant("$currentFixtureClass::TARGET_GROUP") === $runGroup
             ) {
                 $fixture = new $currentFixtureClass($container);

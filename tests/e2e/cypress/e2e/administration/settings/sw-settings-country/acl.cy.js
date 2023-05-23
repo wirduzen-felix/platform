@@ -7,8 +7,6 @@ describe('Country: Test acl privileges', () => {
         cy.createDefaultFixture('country')
             .then(() => {
                 cy.openInitialPage(`${Cypress.env('admin')}#/sw/dashboard/index`);
-                cy.get('.sw-skeleton').should('not.exist');
-                cy.get('.sw-loader').should('not.exist');
             });
     });
 
@@ -173,6 +171,9 @@ describe('Country: Test acl privileges', () => {
         // find a country with the name is "Zimbabwe"
         cy.get('input.sw-search-bar__input').typeAndCheckSearchField('Zimbabwe');
 
+        // hide search bar result
+        cy.get('.sw-card-view__content').click({ force: true });
+
         // choose delete action
         cy.clickContextMenuItem(
             `${page.elements.contextMenu}-item--danger`,
@@ -189,7 +190,6 @@ describe('Country: Test acl privileges', () => {
 
         // call api to delete the country
         cy.wait('@deleteCountry').its('response.statusCode').should('equal', 204);
-
         // assert that modal is off, country is deleted
         cy.get(page.elements.modal).should('not.exist');
         cy.get(`${page.elements.dataGridRow}--0 ${page.elements.countryColumnName}`).should('not.exist');

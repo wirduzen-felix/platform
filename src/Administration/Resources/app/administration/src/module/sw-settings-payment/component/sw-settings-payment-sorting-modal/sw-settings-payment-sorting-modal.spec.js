@@ -29,7 +29,7 @@ async function createWrapper(privileges = []) {
                     }
 
                     return privileges.includes(identifier);
-                }
+                },
             },
             repositoryFactory: {
                 create: () => {
@@ -38,15 +38,15 @@ async function createWrapper(privileges = []) {
                             return Promise.resolve();
                         },
                     };
-                }
-            }
+                },
+            },
         },
         stubs: {
             'sw-modal': true,
             'sw-sortable-list': true,
             'sw-button': true,
             'sw-button-process': true,
-        }
+        },
     });
 }
 
@@ -71,7 +71,7 @@ describe('module/sw-settings-payment/component/sw-settings-payment-sorting-modal
 
         await wrapper.vm.applyChanges();
 
-        expect(wrapper.vm.paymentMethodRepository.saveAll).toBeCalledWith([
+        expect(wrapper.vm.paymentMethodRepository.saveAll).toHaveBeenCalledWith([
             {
                 id: '2b',
                 position: 1,

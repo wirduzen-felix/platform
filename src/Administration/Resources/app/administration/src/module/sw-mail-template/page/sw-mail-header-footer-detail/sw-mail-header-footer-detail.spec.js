@@ -13,10 +13,10 @@ const mailHeaderFooterMock = {
     name: 'Order Header',
     salesChannels: [
         {
-            name: 'Storefront'
-        }
+            name: 'Storefront',
+        },
     ],
-    isNew: () => false
+    isNew: () => false,
 };
 
 const repositoryMockFactory = () => {
@@ -29,9 +29,9 @@ const repositoryMockFactory = () => {
             return {
                 description: '',
                 name: '',
-                isNew: () => true
+                isNew: () => true,
             };
-        }
+        },
     };
 };
 
@@ -43,22 +43,22 @@ const createWrapper = async (privileges = []) => {
         localVue,
         provide: {
             repositoryFactory: {
-                create: () => repositoryMockFactory()
+                create: () => repositoryMockFactory(),
             },
             mailService: {},
             entityMappingService: {
-                getEntityMapping: () => []
+                getEntityMapping: () => [],
             },
             acl: {
                 can: (identifier) => {
                     if (!identifier) { return true; }
 
                     return privileges.includes(identifier);
-                }
-            }
+                },
+            },
         },
         mocks: {
-            $route: { params: { id: Shopware.Utils.createId() } }
+            $route: { params: { id: Shopware.Utils.createId() } },
         },
         stubs: {
             'sw-page': {
@@ -67,13 +67,13 @@ const createWrapper = async (privileges = []) => {
                         <slot name="smart-bar-actions"></slot>
                         <slot name="content"></slot>
                         <slot></slot>
-                    </div>`
+                    </div>`,
             },
             'sw-card-view': {
-                template: '<div><slot></slot></div>'
+                template: '<div><slot></slot></div>',
             },
             'sw-card': {
-                template: '<div><slot></slot></div>'
+                template: '<div><slot></slot></div>',
             },
             'sw-button-process': true,
             'sw-language-info': true,
@@ -82,7 +82,7 @@ const createWrapper = async (privileges = []) => {
             'sw-code-editor': true,
             'sw-button': true,
             'sw-skeleton': true,
-        }
+        },
     });
 };
 
@@ -107,21 +107,21 @@ describe('modules/sw-mail-template/page/sw-mail-header-footer-detail', () => {
             wrapper.find('.sw-mail-header-footer-detail__save-action'),
             wrapper.findAll('sw-field-stub'),
             wrapper.findAll('sw-code-editor-stub'),
-            wrapper.find('sw-entity-multi-select-stub')
+            wrapper.find('sw-entity-multi-select-stub'),
         ].forEach(element => {
-            if (element.length > 1) {
-                element.wrappers.forEach(el => {
-                    expect(el.attributes().disabled).toBeTruthy();
-                });
-            } else {
-                expect(element.attributes().disabled).toBeTruthy();
+            if (!Array.isArray(element.wrappers)) {
+                element = { wrappers: [element] };
             }
+
+            element.wrappers.forEach(el => {
+                expect(el.attributes().disabled).toBeTruthy();
+            });
         });
 
         expect(wrapper.vm.tooltipSave).toStrictEqual({
             message: 'sw-privileges.tooltip.warning',
             disabled: false,
-            showOnDisabledElements: true
+            showOnDisabledElements: true,
         });
     });
 
@@ -133,20 +133,20 @@ describe('modules/sw-mail-template/page/sw-mail-header-footer-detail', () => {
             wrapper.find('.sw-mail-header-footer-detail__save-action'),
             wrapper.findAll('sw-field-stub'),
             wrapper.findAll('sw-code-editor-stub'),
-            wrapper.find('sw-entity-multi-select-stub')
+            wrapper.find('sw-entity-multi-select-stub'),
         ].forEach(element => {
-            if (element.length > 1) {
-                element.wrappers.forEach(el => {
-                    expect(el.attributes().disabled).toBeFalsy();
-                });
-            } else {
-                expect(element.attributes().disabled).toBeFalsy();
+            if (!Array.isArray(element.wrappers)) {
+                element = { wrappers: [element] };
             }
+
+            element.wrappers.forEach(el => {
+                expect(el.attributes().disabled).toBeFalsy();
+            });
         });
 
         expect(wrapper.vm.tooltipSave).toStrictEqual({
             message: 'CTRL + S',
-            appearance: 'light'
+            appearance: 'light',
         });
     });
 });

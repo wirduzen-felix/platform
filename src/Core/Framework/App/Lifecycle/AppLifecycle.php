@@ -171,7 +171,7 @@ class AppLifecycle extends AbstractAppLifecycle
         $metadata['path'] = str_replace($this->projectDir . '/', '', $manifest->getPath());
         $metadata['id'] = $id;
         $metadata['modules'] = [];
-        $metadata['iconRaw'] = $this->appLoader->getIcon($manifest);
+        $metadata['iconRaw'] = $this->getIcon($manifest);
         $metadata['cookies'] = $manifest->getCookies() !== null ? $manifest->getCookies()->getCookies() : [];
         $metadata['baseAppUrl'] = $manifest->getAdmin() !== null ? $manifest->getAdmin()->getBaseAppUrl() : null;
         $metadata['allowedHosts'] = $manifest->getAllHosts();
@@ -232,9 +232,12 @@ class AppLifecycle extends AbstractAppLifecycle
             $this->cmsBlockPersister->updateCmsBlocks($cmsExtensions, $id, $defaultLocale, $context);
         }
 
-        $this->updateConfigurable($app, $manifest, $install, $context);
-
-        $this->updateAllowDisable($app, $context);
+        $updatePayload = [
+            'id' => $app->getId(),
+            'configurable' => $this->handleConfigUpdates($app, $manifest, $install, $context),
+            'allowDisable' => $this->doesAllowDisabling($app, $context),
+        ];
+        $this->updateMetadata($updatePayload, $context);
 
         // updates the snippets if the administration bundle is available
         if ($this->appAdministrationSnippetPersister !== null) {
@@ -455,11 +458,11 @@ class AppLifecycle extends AbstractAppLifecycle
         }
     }
 
-    private function updateConfigurable(AppEntity $app, Manifest $manifest, bool $install, Context $context): void
+    private function handleConfigUpdates(AppEntity $app, Manifest $manifest, bool $install, Context $context): bool
     {
         $config = $this->appLoader->getConfiguration($app);
         if (!$config) {
-            return;
+            return false;
         }
 
         $errors = $this->configValidator->validate($manifest, null);
@@ -472,12 +475,10 @@ class AppLifecycle extends AbstractAppLifecycle
 
         $this->systemConfigService->saveConfig($config, $app->getName() . '.config.', $install);
 
-        $data = ['id' => $app->getId(), 'configurable' => true];
-
-        $this->appRepository->update([$data], $context);
+        return true;
     }
 
-    private function updateAllowDisable(AppEntity $app, Context $context): void
+    private function doesAllowDisabling(AppEntity $app, Context $context): bool
     {
         $allow = true;
 
@@ -496,9 +497,7 @@ class AppLifecycle extends AbstractAppLifecycle
             }
         }
 
-        $data = ['id' => $app->getId(), 'allowDisable' => $allow];
-
-        $this->appRepository->update([$data], $context);
+        return $allow;
     }
 
     /**
@@ -540,5 +539,14 @@ class AppLifecycle extends AbstractAppLifecycle
         }, $manifestWebhooks));
 
         return $webhooks;
+    }
+
+    private function getIcon(Manifest $manifest): ?string
+    {
+        if (!$iconPath = $manifest->getMetadata()->getIcon()) {
+            return null;
+        }
+
+        return $this->appLoader->loadFile($manifest->getPath(), $iconPath);
     }
 }

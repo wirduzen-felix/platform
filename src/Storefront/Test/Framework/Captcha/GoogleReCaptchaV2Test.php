@@ -30,7 +30,7 @@ class GoogleReCaptchaV2Test extends TestCase
 
     private SystemConfigService $systemConfigService;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->captcha = $this->getContainer()->get(GoogleReCaptchaV2::class);
         $this->systemConfigService = $this->getContainer()->get(SystemConfigService::class);
@@ -91,7 +91,7 @@ class GoogleReCaptchaV2Test extends TestCase
         static::assertEquals($captcha->isValid($request, $activeCaptchaConfig[$captcha->getName()]), $shouldBeValid);
     }
 
-    public function requestDataIsValidProvider(): array
+    public static function requestDataIsValidProvider(): array
     {
         return [
             'request with no captcha input' => [
@@ -177,7 +177,7 @@ class GoogleReCaptchaV2Test extends TestCase
         ];
     }
 
-    public function requestDataSupportProvider(): array
+    public static function requestDataSupportProvider(): array
     {
         return [
             'with get method and inactive captcha' => ['GET', false, false],

@@ -10,7 +10,7 @@ use Symfony\Component\Config\Util\XmlUtils;
  * @internal
  */
 #[Package('core')]
-class Field extends XmlElement
+abstract class Field extends XmlElement
 {
     protected string $name;
 
@@ -41,12 +41,15 @@ class Field extends XmlElement
         return $this->storeApiAware;
     }
 
+    abstract public static function fromXml(\DOMElement $element): Field;
+
     protected static function parse(\DOMElement $element): array
     {
         $values = [];
 
         if (is_iterable($element->attributes)) {
             foreach ($element->attributes as $attribute) {
+                \assert($attribute instanceof \DOMAttr);
                 $name = self::kebabCaseToCamelCase($attribute->name);
 
                 $values[$name] = XmlUtils::phpize($attribute->value);

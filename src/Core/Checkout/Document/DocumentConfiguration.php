@@ -122,6 +122,11 @@ class DocumentConfiguration extends Struct
     /**
      * @var string|null
      */
+    protected $companyPhone;
+
+    /**
+     * @var string|null
+     */
     protected $companyUrl;
 
     /**
@@ -197,7 +202,7 @@ class DocumentConfiguration extends Struct
      */
     public function __set($name, $value)
     {
-        $this->$name = $value;
+        $this->$name = $value; /* @phpstan-ignore-line */
 
         return $this;
     }
@@ -209,7 +214,7 @@ class DocumentConfiguration extends Struct
      */
     public function __get($name)
     {
-        return $this->$name;
+        return $this->$name; /* @phpstan-ignore-line */
     }
 
     /**

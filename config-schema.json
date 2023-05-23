@@ -159,6 +159,12 @@
                 "enable_admin_worker": {
                     "type": "boolean"
                 },
+                "enable_queue_stats_worker": {
+                    "type": "boolean"
+                },
+                "enable_notification_worker": {
+                    "type": "boolean"
+                },
                 "poll_interval": {
                     "type": "integer"
                 },
@@ -178,6 +184,12 @@
                 "max_limit": {
                     "type": "integer"
                 },
+                "access_token_ttl": {
+                    "type": "string"
+                },
+                "refresh_token_ttl": {
+                    "type": "string"
+                },
                 "api_browser": {
                     "$ref": "#/definitions/api_browser"
                 },
@@ -186,6 +198,9 @@
                 },
                 "rate_limiter": {
                     "$ref": "#/definitions/rate_limiter"
+                },
+                "jwt_key": {
+                    "$ref": "#/definitions/jwt_key"
                 }
             },
             "title": "API"
@@ -265,6 +280,24 @@
                 }
             },
             "title": "API store"
+        },
+        "jwt_key": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+                "private_key_path": {
+                    "type": "string",
+                    "description": "Path to the private key file."
+                },
+                "private_key_passphrase": {
+                    "type": "string",
+                    "description": "Passphrase for the private key file."
+                },
+                "public_key_path": {
+                    "type": "string",
+                    "description": "Path to the public key file."
+                }
+            }
         },
         "auto_update": {
             "type": "object",
@@ -535,6 +568,26 @@
                                 "type": "array",
                                 "items": {
                                     "type": "string"
+                                }
+                            },
+                            "custom_attributes": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "tags": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        },
+                                        "attributes": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
                                 }
                             },
                             "options": {

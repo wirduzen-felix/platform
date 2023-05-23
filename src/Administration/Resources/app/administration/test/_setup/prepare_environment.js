@@ -12,7 +12,6 @@ import '@testing-library/jest-dom';
 import aclService from './_mocks_/acl.service.mock';
 import feature from './_mocks_/feature.service.mock';
 import repositoryFactory from './_mocks_/repositoryFactory.service.mock';
-import { sendTimeoutExpired } from '../_helper_/allowedErrors';
 import flushPromises from '../_helper_/flushPromises';
 
 // Setup Vue Test Utils configuration
@@ -87,6 +86,7 @@ config.mocks = {
     $sanitize: key => key,
     $device: {
         onResize: jest.fn(),
+        removeResizeListener: jest.fn(),
         getSystemKey: jest.fn(() => 'CTRL'),
         getViewportWidth: jest.fn(() => 1920),
     },
@@ -108,9 +108,7 @@ config.mocks = {
     $store: Shopware.State._store,
 };
 
-global.allowedErrors = [
-    sendTimeoutExpired
-];
+global.allowedErrors = [];
 
 global.flushPromises = flushPromises;
 
@@ -138,9 +136,8 @@ global.console.error = (...args) => {
 
     if (!silenceError) {
         consoleHasErrorOrWarning = true;
+        error(...args);
     }
-
-    error(...args);
 };
 
 global.console.warn = (...args) => {
@@ -162,19 +159,20 @@ global.console.warn = (...args) => {
 
     if (!silenceWarn) {
         consoleHasErrorOrWarning = true;
+        warn(...args);
     }
-
-    warn(...args);
 };
 
-beforeEach(() => {
+// eslint-disable-next-line jest/require-top-level-describe
+afterEach(() => {
     if (consoleHasErrorOrWarning) {
+        // reset variable for next test
         consoleHasErrorOrWarning = false;
+
+        throw new Error('console.error and console.warn are not allowed');
     }
 });
 
-afterEach(() => {
-    if (consoleHasErrorOrWarning) {
-        throw new Error('console.error and console.warn are not allowed');
-    }
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });

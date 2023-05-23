@@ -88,6 +88,8 @@ class CustomerEntity extends Entity implements \Stringable
 
     protected ?\DateTimeInterface $lastLogin = null;
 
+    protected string $accountType;
+
     /**
      * @var array<string>|null
      *
@@ -102,6 +104,8 @@ class CustomerEntity extends Entity implements \Stringable
     protected int $orderCount;
 
     protected float $orderTotalAmount;
+
+    protected int $reviewCount;
 
     /**
      * @var \DateTimeInterface|null
@@ -498,6 +502,16 @@ class CustomerEntity extends Entity implements \Stringable
         return $this->orderTotalAmount;
     }
 
+    public function getReviewCount(): int
+    {
+        return $this->reviewCount;
+    }
+
+    public function setReviewCount(int $reviewCount): void
+    {
+        $this->reviewCount = $reviewCount;
+    }
+
     public function setOrderTotalAmount(float $orderTotalAmount): void
     {
         $this->orderTotalAmount = $orderTotalAmount;
@@ -814,6 +828,16 @@ class CustomerEntity extends Entity implements \Stringable
     public function setBoundSalesChannel(SalesChannelEntity $boundSalesChannel): void
     {
         $this->boundSalesChannel = $boundSalesChannel;
+    }
+
+    public function setAccountType(string $accountType): void
+    {
+        $this->accountType = $accountType;
+    }
+
+    public function getAccountType(): string
+    {
+        return $this->accountType;
     }
 
     public function getWishlists(): ?CustomerWishlistCollection

@@ -32,7 +32,7 @@ class AclAnnotationValidatorTest extends TestCase
 
     private AclAnnotationValidator $validator;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->appRepository = $this->getContainer()->get('app.repository');
         $this->connection = $this->getContainer()->get(Connection::class);
@@ -65,8 +65,10 @@ class AclAnnotationValidatorTest extends TestCase
 
         $exception = null;
 
+        $controller = new AclTestController();
+
         try {
-            $this->validator->validate(new ControllerEvent($kernel, [new AclTestController(), 'testRoute'], $request, 1));
+            $this->validator->validate(new ControllerEvent($kernel, $controller->testRoute(...), $request, 1));
         } catch (\Exception $e) {
             $exception = $e;
         }
@@ -102,8 +104,10 @@ class AclAnnotationValidatorTest extends TestCase
 
         $exception = null;
 
+        $controller = new AclTestController();
+
         try {
-            $this->validator->validate(new ControllerEvent($kernel, [new AclTestController(), 'testRoute'], $request, 1));
+            $this->validator->validate(new ControllerEvent($kernel, $controller->testRoute(...), $request, 1));
         } catch (\Exception $e) {
             $exception = $e;
         }
@@ -135,8 +139,10 @@ class AclAnnotationValidatorTest extends TestCase
 
         $exception = null;
 
+        $controller = new AclTestController();
+
         try {
-            $this->validator->validate(new ControllerEvent($kernel, [new AclTestController(), 'testRoute'], $request, 1));
+            $this->validator->validate(new ControllerEvent($kernel, $controller->testRoute(...), $request, 1));
         } catch (\Exception $e) {
             $exception = $e;
         }

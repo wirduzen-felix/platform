@@ -28,7 +28,7 @@ class ActionTest extends TestCase
 
     private Action $action;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         /** @var Metadata $meta */
         $meta = $this->createMock(Metadata::class);
@@ -88,7 +88,7 @@ class ActionTest extends TestCase
         /** @var \DOMElement $actions */
         $actions = $doc->getElementsByTagName('flow-actions')->item(0);
         foreach ($actions->getElementsByTagName('flow-action') as $action) {
-            $result = $this->action::fromXml($action);
+            $result = $this->action->fromXml($action);
             static::assertInstanceOf(Action::class, $result);
         }
     }

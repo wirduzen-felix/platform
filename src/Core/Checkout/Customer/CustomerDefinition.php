@@ -73,6 +73,13 @@ class CustomerDefinition extends EntityDefinition
         return CustomerEntity::class;
     }
 
+    public function getDefaults(): array
+    {
+        return [
+            'accountType' => CustomerEntity::ACCOUNT_TYPE_PRIVATE,
+        ];
+    }
+
     public function hasManyToManyIdFields(): bool
     {
         return true;
@@ -119,6 +126,7 @@ class CustomerDefinition extends EntityDefinition
             (new DateTimeField('last_order_date', 'lastOrderDate'))->addFlags(new ApiAware(), new WriteProtected(Context::SYSTEM_SCOPE)),
             (new IntField('order_count', 'orderCount'))->addFlags(new ApiAware(), new WriteProtected(Context::SYSTEM_SCOPE)),
             (new FloatField('order_total_amount', 'orderTotalAmount'))->addFlags(new ApiAware(), new WriteProtected(Context::SYSTEM_SCOPE)),
+            (new IntField('review_count', 'reviewCount'))->addFlags(new ApiAware(), new WriteProtected(Context::SYSTEM_SCOPE)),
             (new CustomFields())->addFlags(new ApiAware()),
             (new StringField('legacy_password', 'legacyPassword'))->removeFlag(ApiAware::class),
             (new StringField('legacy_encoder', 'legacyEncoder'))->removeFlag(ApiAware::class),
@@ -141,6 +149,7 @@ class CustomerDefinition extends EntityDefinition
             new FkField('requested_customer_group_id', 'requestedGroupId', CustomerGroupDefinition::class),
             (new ManyToOneAssociationField('requestedGroup', 'requested_customer_group_id', CustomerGroupDefinition::class, 'id', false)),
             new FkField('bound_sales_channel_id', 'boundSalesChannelId', SalesChannelDefinition::class),
+            (new StringField('account_type', 'accountType'))->addFlags(new ApiAware(), new Required()),
             new ManyToOneAssociationField('boundSalesChannel', 'bound_sales_channel_id', SalesChannelDefinition::class, 'id', false),
             (new OneToManyAssociationField('wishlists', CustomerWishlistDefinition::class, 'customer_id'))->addFlags(new CascadeDelete()),
             (new CreatedByField([Context::SYSTEM_SCOPE, Context::CRUD_API_SCOPE]))->addFlags(new ApiAware()),

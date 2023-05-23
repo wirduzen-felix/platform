@@ -58,6 +58,9 @@ class SetPaymentOrderRoute extends AbstractSetPaymentOrderRoute
         throw new DecorationPatternException(self::class);
     }
 
+    /**
+     * @phpstan-ignore-next-line setter name is misleading, but kept for BC
+     */
     #[Route(path: '/store-api/order/payment', name: 'store-api.order.set-payment', methods: ['POST'], defaults: ['_loginRequired' => true, '_loginRequiredAllowGuest' => true])]
     public function setPayment(Request $request, SalesChannelContext $context): SetPaymentOrderRouteResponse
     {
@@ -231,7 +234,15 @@ class SetPaymentOrderRoute extends AbstractSetPaymentOrderRoute
                 $customer->getId()
             )
         );
-        $criteria->addAssociations(['lineItems', 'deliveries', 'orderCustomer', 'tags']);
+        $criteria->addAssociations([
+            'lineItems',
+            'deliveries.shippingOrderAddress',
+            'deliveries.stateMachineState',
+            'orderCustomer',
+            'tags',
+            'transactions.stateMachineState',
+            'stateMachineState',
+        ]);
 
         $this->eventDispatcher->dispatch(new OrderPaymentMethodChangedCriteriaEvent($orderId, $criteria, $context));
 

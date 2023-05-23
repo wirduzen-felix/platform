@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Content\Product\SalesChannel\Listing;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\Events\ProductListingPreviewCriteriaEvent;
 use Shopware\Core\Content\Product\Events\ProductListingResolvePreviewEvent;
@@ -163,7 +164,7 @@ class ProductListingLoader
                 'ids' => Uuid::fromHexToBytesList(array_values($ids)),
                 'version' => Uuid::fromHexToBytes($context->getContext()->getVersionId()),
             ],
-            ['ids' => Connection::PARAM_STR_ARRAY]
+            ['ids' => ArrayParameterType::STRING]
         );
 
         $mapping = [];
@@ -173,11 +174,11 @@ class ProductListingLoader
             }
             $variantListingConfig = json_decode((string) $item['variantListingConfig'], true, 512, \JSON_THROW_ON_ERROR);
 
-            if ($variantListingConfig['mainVariantId']) {
+            if (isset($variantListingConfig['mainVariantId']) && $variantListingConfig['mainVariantId']) {
                 $mapping[$item['id']] = $variantListingConfig['mainVariantId'];
             }
 
-            if ($variantListingConfig['displayParent']) {
+            if (isset($variantListingConfig['displayParent']) && $variantListingConfig['displayParent']) {
                 $mapping[$item['id']] = $item['parentId'];
             }
         }

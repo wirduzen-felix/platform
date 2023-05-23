@@ -84,11 +84,11 @@ CREATE TABLE `_test_nullable` (
   PRIMARY KEY `id` (`id`)
 );
 EOF;
-        $this->connection->executeUpdate($nullableTable);
+        $this->connection->executeStatement($nullableTable);
         $this->connection->beginTransaction();
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         $this->connection->rollBack();
         $this->connection->executeStatement('DROP TABLE `_test_nullable`');

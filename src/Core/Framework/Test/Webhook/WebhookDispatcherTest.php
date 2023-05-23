@@ -35,8 +35,8 @@ use Shopware\Core\Framework\Webhook\WebhookDispatcher;
 use Shopware\Core\Kernel;
 use Shopware\Core\System\SalesChannel\Context\SalesChannelContextFactory;
 use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Shopware\Core\Test\Integration\App\GuzzleHistoryCollector;
 use Shopware\Core\Test\TestDefaults;
-use Shopware\Tests\Integration\Core\Framework\App\GuzzleHistoryCollector;
 use Shopware\Tests\Integration\Core\Framework\App\GuzzleTestClientBehaviour;
 use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
@@ -60,7 +60,7 @@ class WebhookDispatcherTest extends TestCase
 
     private GuzzleHistoryCollector $guzzleHistory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->webhookRepository = $this->getContainer()->get('webhook.repository');
         $this->shopUrl = $_SERVER['APP_URL'];

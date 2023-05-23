@@ -22,7 +22,7 @@ class HeaderPageletLoaderTest extends TestCase
 
     private EntityRepository $languageRepository;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->languageRepository = $this->getContainer()->get('language.repository');
     }
@@ -55,7 +55,7 @@ class HeaderPageletLoaderTest extends TestCase
      * Some characters like A and Ä share one position since Ä is being seen as A with decorations.
      * Adding a test case with e.g. Alang and Älang with an expected order will introduce flakynes.
      */
-    public function sortingTestDataProvider(): array
+    public static function sortingTestDataProvider(): array
     {
         return [
             [

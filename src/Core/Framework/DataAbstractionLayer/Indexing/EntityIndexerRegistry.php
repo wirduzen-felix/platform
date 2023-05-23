@@ -3,24 +3,19 @@
 namespace Shopware\Core\Framework\DataAbstractionLayer\Indexing;
 
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IterableQuery;
 use Shopware\Core\Framework\DataAbstractionLayer\Event\EntityWrittenContainerEvent;
 use Shopware\Core\Framework\DataAbstractionLayer\Indexing\MessageQueue\IterateEntityIndexerMessage;
 use Shopware\Core\Framework\Event\ProgressAdvancedEvent;
 use Shopware\Core\Framework\Event\ProgressFinishedEvent;
 use Shopware\Core\Framework\Event\ProgressStartedEvent;
 use Shopware\Core\Framework\Log\Package;
-use Shopware\Core\Framework\Struct\ArrayStruct;
+use Shopware\Core\Framework\Struct\ArrayEntity;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * @final
- *
- * @internal
- *
- * @phpstan-import-type Offset from IterableQuery
  */
 #[AsMessageHandler]
 #[Package('core')]
@@ -46,6 +41,9 @@ class EntityIndexerRegistry
     ) {
     }
 
+    /**
+     * @internal
+     */
     public function __invoke(EntityIndexingMessage|IterateEntityIndexerMessage $message): void
     {
         if ($message instanceof EntityIndexingMessage) {
@@ -145,7 +143,7 @@ class EntityIndexerRegistry
         if (!$context->hasExtension(self::EXTENSION_INDEXER_SKIP)) {
             return;
         }
-        /** @var ArrayStruct<string, mixed> $skip */
+        /** @var ArrayEntity $skip */
         $skip = $context->getExtension(self::EXTENSION_INDEXER_SKIP);
 
         $message->addSkip(...$skip->get('skips'));
@@ -214,7 +212,7 @@ class EntityIndexerRegistry
     }
 
     /**
-     * @param Offset|null $offset
+     * @param array{offset: int|null}|null $offset
      * @param list<string> $skip
      */
     private function iterateIndexer(string $name, ?array $offset, bool $useQueue, array $skip): ?EntityIndexingMessage

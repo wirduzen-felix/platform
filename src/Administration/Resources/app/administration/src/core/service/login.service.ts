@@ -6,7 +6,8 @@ import { CookieStorage } from 'cookie-storage';
 import html2canvas from 'html2canvas';
 import type VueRouter from 'vue-router';
 
-interface AuthObject {
+/** @private */
+export interface AuthObject {
     access: string,
     refresh: string,
     expiry: number
@@ -26,13 +27,14 @@ export interface LoginService {
     verifyUserByUsername: (user: string, pass: string) => Promise<AuthObject>,
     refreshToken: () => Promise<AuthObject['access']>,
     getToken: () => string,
-    getBearerAuthentication: <K extends keyof AuthObject>(section: K) => AuthObject[K],
+    getBearerAuthentication: <K extends keyof AuthObject>(section?: K) => AuthObject[K],
     setBearerAuthentication: ({ access, refresh, expiry }: AuthObject) => AuthObject,
-    logout: (isInactivityLogout: boolean, shouldRedirect: boolean) => boolean,
+    logout: (isInactivityLogout?: boolean, shouldRedirect?: boolean) => boolean,
+    forwardLogout(isInactivityLogout: boolean, shouldRedirect: boolean): void,
     isLoggedIn: () => boolean,
-    addOnTokenChangedListener: (listener: () => void) => void,
+    addOnTokenChangedListener: (listener: (auth?: AuthObject) => void) => void,
     addOnLogoutListener: (listener: () => void) => void,
-    addOnLoginListener: (listener: () => void) => void,
+    addOnLoginListener: (listener: () => unknown) => void,
     getStorageKey: () => string,
     notifyOnLoginListener: () => (void[] | null),
     verifyUserToken: (password: string) => Promise<string>,
@@ -60,6 +62,7 @@ export default function createLoginService(
         getBearerAuthentication,
         setBearerAuthentication,
         logout,
+        forwardLogout,
         isLoggedIn,
         addOnTokenChangedListener,
         addOnLogoutListener,
@@ -170,7 +173,7 @@ export default function createLoginService(
     /**
      * Adds an Listener for the onTokenChangedEvent
      */
-    function addOnTokenChangedListener(listener: () => void): void {
+    function addOnTokenChangedListener(listener: (auth?: AuthObject) => void): void {
         onTokenChangedListener.push(listener);
     }
 
@@ -255,7 +258,7 @@ export default function createLoginService(
             clearTimeout(autoRefreshTokenTimeoutId);
         }
 
-        if (lastActivityOverThreshold()) {
+        if (shouldConsiderUserActivity() && lastActivityOverThreshold()) {
             logout(true);
 
             return;
@@ -283,11 +286,17 @@ export default function createLoginService(
         return lastActivity <= threshold;
     }
 
+    function shouldConsiderUserActivity(): boolean {
+        const devEnv = Shopware.Context.app.environment === 'development';
+
+        return !devEnv;
+    }
+
     /**
      * Returns saved bearer authentication object. Either you're getting the full object or when you're specifying
      * the `section` argument and getting either the token or the expiry date.
      */
-    function getBearerAuthentication<K extends keyof AuthObject>(section: K): AuthObject[K]
+    function getBearerAuthentication<K extends keyof AuthObject>(section?: K): AuthObject[K]
 
     // eslint-disable-next-line max-len
     function getBearerAuthentication<K extends keyof AuthObject>(section: K | null = null): false | AuthObject | AuthObject[K] {
@@ -316,24 +325,31 @@ export default function createLoginService(
      * Clears the cookie stored bearer authentication object.
      */
     function logout(isInactivityLogout = false, shouldRedirect = true): boolean {
-        // token got already removed? avoid duplicate navigation and early return
-        if (!getToken()) {
-            return false;
-        }
-
         if (typeof document !== 'undefined' && typeof document.cookie !== 'undefined') {
             cookieStorage.removeItem(storageKey);
         }
 
         context.authToken = null;
         bearerAuth = null;
+        localStorage.removeItem('rememberMe');
 
+        forwardLogout(isInactivityLogout, shouldRedirect);
+
+        return true;
+    }
+
+    /**
+     * @private
+     */
+    function forwardLogout(isInactivityLogout: boolean, shouldRedirect: boolean): void {
         notifyOnLogoutListener();
 
         // @ts-expect-error
-        const $router = Shopware.Application.getApplicationRoot().$router as null|VueRouter;
+        const $router = Shopware.Application.getApplicationRoot().$router as null | VueRouter;
         if ($router) {
-            sessionStorage.setItem('sw-admin-previous-route', JSON.stringify({
+            const id = Shopware.Utils.createId();
+
+            sessionStorage.setItem(`sw-admin-previous-route_${id}`, JSON.stringify({
                 fullPath: $router.currentRoute.fullPath,
                 name: $router.currentRoute.name,
             }));
@@ -341,18 +357,16 @@ export default function createLoginService(
             if (isInactivityLogout && shouldRedirect) {
                 // @ts-expect-error - The app element exists
                 void html2canvas(document.querySelector('#app'), { scale: 0.1 }).then(canvas => {
-                    window.localStorage.setItem('inactivityBackground', canvas.toDataURL('image/jpeg'));
+                    window.localStorage.setItem(`inactivityBackground_${id}`, canvas.toDataURL('image/jpeg'));
 
-                    window.localStorage.setItem('lastKnownUser', Shopware.State.get('session').currentUser.username);
+                    window.sessionStorage.setItem('lastKnownUser', Shopware.State.get('session').currentUser.username);
 
-                    void $router.push({ name: 'sw.inactivity.login.index' });
+                    void $router.push({ name: 'sw.inactivity.login.index', params: { id } });
                 });
             } else {
                 void $router.push({ name: 'sw.login.index' });
             }
         }
-
-        return true;
     }
 
     /**

@@ -2,6 +2,9 @@
 
 namespace Shopware\Core\Framework\Plugin;
 
+use Composer\InstalledVersions;
+use Composer\IO\NullIO;
+use Composer\Semver\Comparator;
 use Psr\Cache\CacheItemPoolInterface;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\Context\SystemSource;
@@ -42,6 +45,7 @@ use Shopware\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader;
 use Shopware\Core\Framework\Plugin\Requirement\Exception\RequirementStackException;
 use Shopware\Core\Framework\Plugin\Requirement\RequirementsValidator;
 use Shopware\Core\Framework\Plugin\Util\AssetService;
+use Shopware\Core\Framework\Plugin\Util\VersionSanitizer;
 use Shopware\Core\Kernel;
 use Shopware\Core\System\CustomEntity\CustomEntityLifecycleService;
 use Shopware\Core\System\CustomEntity\Schema\CustomEntityPersister;
@@ -73,7 +77,9 @@ class PluginLifecycleService
         private readonly SystemConfigService $systemConfigService,
         private readonly CustomEntityPersister $customEntityPersister,
         private readonly CustomEntitySchemaUpdater $customEntitySchemaUpdater,
-        private readonly CustomEntityLifecycleService $customEntityLifecycleService
+        private readonly CustomEntityLifecycleService $customEntityLifecycleService,
+        private readonly PluginService $pluginService,
+        private readonly VersionSanitizer $versionSanitizer,
     ) {
     }
 
@@ -99,15 +105,7 @@ class PluginLifecycleService
         }
 
         if ($pluginBaseClass->executeComposerCommands()) {
-            $pluginComposerName = $plugin->getComposerName();
-            if ($pluginComposerName === null) {
-                throw new PluginComposerJsonInvalidException(
-                    $pluginBaseClass->getPath() . '/composer.json',
-                    ['No name defined in composer.json']
-                );
-            }
-
-            $this->executor->require($pluginComposerName, $plugin->getName());
+            $this->executeComposerRequireWhenNeeded($plugin, $pluginBaseClass, $pluginVersion, $shopwareContext);
         } else {
             $this->requirementValidator->validateRequirements($plugin, $shopwareContext, 'install');
         }
@@ -167,17 +165,6 @@ class PluginLifecycleService
         $pluginBaseClassString = $plugin->getBaseClass();
         $pluginBaseClass = $this->getPluginBaseClass($pluginBaseClassString);
 
-        if ($pluginBaseClass->executeComposerCommands()) {
-            $pluginComposerName = $plugin->getComposerName();
-            if ($pluginComposerName === null) {
-                throw new PluginComposerJsonInvalidException(
-                    $pluginBaseClass->getPath() . '/composer.json',
-                    ['No name defined in composer.json']
-                );
-            }
-            $this->executor->remove($pluginComposerName, $plugin->getName());
-        }
-
         $uninstallContext = new UninstallContext(
             $pluginBaseClass,
             $shopwareContext,
@@ -217,6 +204,20 @@ class PluginLifecycleService
             $this->removeCustomEntities($plugin->getId());
         }
 
+        if ($pluginBaseClass->executeComposerCommands()) {
+            $pluginComposerName = $plugin->getComposerName();
+            if ($pluginComposerName === null) {
+                throw new PluginComposerJsonInvalidException(
+                    $pluginBaseClass->getPath() . '/composer.json',
+                    ['No name defined in composer.json']
+                );
+            }
+            $this->executor->remove($pluginComposerName, $plugin->getName());
+
+            // running composer require may have consequences for other plugins, when they are required by the plugin being uninstalled
+            $this->pluginService->refreshPlugins($shopwareContext, new NullIO());
+        }
+
         $this->eventDispatcher->dispatch(new PluginPostUninstallEvent($plugin, $uninstallContext));
 
         return $uninstallContext;
@@ -244,14 +245,7 @@ class PluginLifecycleService
         );
 
         if ($pluginBaseClass->executeComposerCommands()) {
-            $pluginComposerName = $plugin->getComposerName();
-            if ($pluginComposerName === null) {
-                throw new PluginComposerJsonInvalidException(
-                    $pluginBaseClass->getPath() . '/composer.json',
-                    ['No name defined in composer.json']
-                );
-            }
-            $this->executor->require($pluginComposerName, $plugin->getName());
+            $this->executeComposerRequireWhenNeeded($plugin, $pluginBaseClass, $updateContext->getUpdatePluginVersion(), $shopwareContext);
         } else {
             $this->requirementValidator->validateRequirements($plugin, $shopwareContext, 'update');
         }
@@ -608,5 +602,37 @@ class PluginLifecycleService
             (new Criteria())->addFilter(new EqualsAnyFilter('name', $names)),
             $context
         );
+    }
+
+    private function executeComposerRequireWhenNeeded(PluginEntity $plugin, Plugin $pluginBaseClass, string $pluginVersion, Context $shopwareContext): void
+    {
+        $pluginComposerName = $plugin->getComposerName();
+        if ($pluginComposerName === null) {
+            throw new PluginComposerJsonInvalidException(
+                $pluginBaseClass->getPath() . '/composer.json',
+                ['No name defined in composer.json']
+            );
+        }
+
+        try {
+            $installedVersion = InstalledVersions::getVersion($pluginComposerName);
+        } catch (\OutOfBoundsException) {
+            // plugin is not installed using composer yet
+            $installedVersion = null;
+        }
+
+        if ($installedVersion !== null) {
+            $sanitizedVersion = $this->versionSanitizer->sanitizePluginVersion($installedVersion);
+
+            if (Comparator::equalTo($sanitizedVersion, $pluginVersion)) {
+                // plugin was already required at build time, no need to do so again at runtime
+                return;
+            }
+        }
+
+        $this->executor->require($pluginComposerName . ':' . $pluginVersion, $plugin->getName());
+
+        // running composer require may have consequences for other plugins, when they are required by the plugin being installed
+        $this->pluginService->refreshPlugins($shopwareContext, new NullIO());
     }
 }

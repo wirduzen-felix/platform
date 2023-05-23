@@ -4,20 +4,20 @@ namespace Shopware\Core\Checkout\Cart\Hook;
 
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\Facade\CartFacadeHookFactory;
+use Shopware\Core\Checkout\Cart\Facade\PriceFactoryFactory;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Script\Execution\Hook;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SystemConfig\Facade\SystemConfigFacadeHookFactory;
 
 /**
- * @package checkout
- */
-/**
  * Triggered during the cart calculation process.
  *
  * @hook-use-case cart_manipulation
  *
  * @since 6.4.8.0
+ *
+ * @final
  */
 #[Package('checkout')]
 class CartHook extends Hook implements CartAware
@@ -46,6 +46,7 @@ class CartHook extends Hook implements CartAware
     {
         return [
             CartFacadeHookFactory::class,
+            PriceFactoryFactory::class,
             SystemConfigFacadeHookFactory::class,
         ];
     }

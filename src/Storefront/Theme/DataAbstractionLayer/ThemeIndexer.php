@@ -2,6 +2,7 @@
 
 namespace Shopware\Storefront\Theme\DataAbstractionLayer;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IterableQuery;
 use Shopware\Core\Framework\DataAbstractionLayer\Dbal\Common\IteratorFactory;
@@ -17,9 +18,6 @@ use Shopware\Storefront\Theme\Event\ThemeIndexerEvent;
 use Shopware\Storefront\Theme\ThemeDefinition;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-/**
- * @phpstan-import-type Offset from IterableQuery
- */
 #[Package('core')]
 class ThemeIndexer extends EntityIndexer
 {
@@ -78,7 +76,7 @@ class ThemeIndexer extends EntityIndexer
             $this->connection->executeStatement(
                 'DELETE FROM theme_child WHERE parent_id IN (:ids)',
                 ['ids' => Uuid::fromHexToBytesList($ids)],
-                ['ids' => Connection::PARAM_STR_ARRAY]
+                ['ids' => ArrayParameterType::STRING]
             );
 
             $this->connection->executeStatement(
@@ -89,7 +87,7 @@ class ThemeIndexer extends EntityIndexer
                     )
                 ',
                 ['ids' => Uuid::fromHexToBytesList($ids)],
-                ['ids' => Connection::PARAM_STR_ARRAY]
+                ['ids' => ArrayParameterType::STRING]
             );
         });
 
@@ -107,7 +105,7 @@ class ThemeIndexer extends EntityIndexer
     }
 
     /**
-     * @param Offset|null $offset
+     * @param array{offset: int|null}|null $offset
      */
     private function getIterator(?array $offset): IterableQuery
     {

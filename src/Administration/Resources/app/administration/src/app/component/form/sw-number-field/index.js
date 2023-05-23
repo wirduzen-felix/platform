@@ -121,6 +121,11 @@ Component.extend('sw-number-field', 'sw-text-field', {
                 return '';
             }
 
+            // remove scientific notation
+            if (this.value !== null && /\d+\.?\d*e[+-]*\d+/i.test(this.value)) {
+                return this.value.toLocaleString('fullwide', { useGrouping: false });
+            }
+
             return this.fillDigits && this.numberType !== 'int'
                 ? this.currentValue.toFixed(this.digits)
                 : this.currentValue.toString();
@@ -159,6 +164,10 @@ Component.extend('sw-number-field', 'sw-text-field', {
                 }
 
                 this.$emit('input-change', val);
+            } else if (this.allowEmpty === true) {
+                this.$emit('input-change', val);
+            } else {
+                this.$emit('input-change', this.min ?? 0);
             }
         },
 

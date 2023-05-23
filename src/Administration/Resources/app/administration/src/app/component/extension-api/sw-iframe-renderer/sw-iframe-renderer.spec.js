@@ -10,8 +10,8 @@ async function createWrapper() {
     return shallowMount(await Shopware.Component.build('sw-iframe-renderer'), {
         stubs: {
             'my-replacement-component': {
-                template: '<h1 id="my-replacement-component">Replacement component</h1>'
-            }
+                template: '<h1 id="my-replacement-component">Replacement component</h1>',
+            },
         },
         provide: {
             extensionSdkService: {
@@ -19,13 +19,13 @@ async function createWrapper() {
                     return Promise.resolve({
                         uri: `${url}__SIGNED__`,
                     });
-                }
+                },
             },
         },
         propsData: {
             src: 'https://example.com',
             locationId: 'foo',
-        }
+        },
     });
 }
 
@@ -60,7 +60,7 @@ describe('src/app/component/extension-api/sw-iframe-renderer', () => {
         const wrapper = await createWrapper();
         await flushPromises();
 
-        expect(wrapper.vm.signedIframeSrc).toBe(null);
+        expect(wrapper.vm.signedIframeSrc).toBeNull();
     });
 
     it('should call signIframeSrc for apps', async () => {
@@ -99,7 +99,7 @@ describe('src/app/component/extension-api/sw-iframe-renderer', () => {
         expect(testComponent.exists()).toBe(false);
     });
 
-    it('should render iFrame', async () => {
+    it('should render iFrame with replacement component', async () => {
         Shopware.State.commit('extensions/addExtension', {
             name: 'foo',
             baseUrl: 'https://example.com',
@@ -111,7 +111,7 @@ describe('src/app/component/extension-api/sw-iframe-renderer', () => {
 
         Shopware.State.commit('sdkLocation/addLocation', {
             locationId: 'foo',
-            componentName: 'my-replacement-component'
+            componentName: 'my-replacement-component',
         });
 
         const wrapper = await createWrapper();

@@ -16,7 +16,7 @@ use Shopware\Core\Framework\Validation\DataValidator;
 use Shopware\Core\System\SalesChannel\NoContentResponse;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Core\System\SalesChannel\SalesChannelEntity;
-use Shopware\Core\System\SystemConfig\SystemConfigService;
+use Shopware\Tests\Unit\Common\Stubs\SystemConfigService\StaticSystemConfigService;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -31,17 +31,22 @@ class ProductReviewSaveRouteTest extends TestCase
 
     private MockObject&DataValidator $validator;
 
-    private MockObject&SystemConfigService $config;
+    private StaticSystemConfigService $config;
 
     private MockObject&EventDispatcherInterface $eventDispatcher;
 
     private ProductReviewSaveRoute $route;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->repository = $this->createMock(EntityRepository::class);
         $this->validator = $this->createMock(DataValidator::class);
-        $this->config = $this->createMock(SystemConfigService::class);
+        $this->config = new StaticSystemConfigService([
+            'test' => [
+                'core.listing.showReview' => true,
+                'core.basicInformation.email' => 'noreply@example.com',
+            ],
+        ]);
         $this->eventDispatcher = $this->createMock(EventDispatcherInterface::class);
 
         $this->route = new ProductReviewSaveRoute(
@@ -71,17 +76,11 @@ class ProductReviewSaveRouteTest extends TestCase
         $customer->setLastName('Mustermann');
         $customer->setEmail('foo@example.com');
         $salesChannel = new SalesChannelEntity();
-        $salesChannel->setId(Uuid::randomHex());
+        $salesChannel->setId('test');
 
         $salesChannelContext->expects(static::once())->method('getCustomer')->willReturn($customer);
         $salesChannelContext->expects(static::exactly(4))->method('getSalesChannel')->willReturn($salesChannel);
         $salesChannelContext->expects(static::exactly(4))->method('getContext')->willReturn($context);
-
-        $this->config
-            ->expects(static::exactly(2))
-            ->method('get')
-            ->withConsecutive(['core.listing.showReview'], ['core.basicInformation.email'])
-            ->willReturnOnConsecutiveCalls(true, 'noreply@example.com');
 
         $this->validator->expects(static::once())->method('getViolations')->willReturn(new ConstraintViolationList());
 

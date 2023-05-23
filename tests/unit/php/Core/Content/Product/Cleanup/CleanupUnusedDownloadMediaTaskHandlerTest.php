@@ -4,13 +4,11 @@ namespace Shopware\Tests\Unit\Core\Content\Product\Cleanup;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Shopware\Core\Content\Media\DeleteNotUsedMediaService;
+use Shopware\Core\Content\Media\UnusedMediaPurger;
 use Shopware\Core\Content\Product\Aggregate\ProductDownload\ProductDownloadDefinition;
 use Shopware\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTask;
 use Shopware\Core\Content\Product\Cleanup\CleanupUnusedDownloadMediaTaskHandler;
-use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\Struct\ArrayStruct;
 
 /**
  * @internal
@@ -19,38 +17,31 @@ use Shopware\Core\Framework\Struct\ArrayStruct;
  */
 class CleanupUnusedDownloadMediaTaskHandlerTest extends TestCase
 {
-    private MockObject&DeleteNotUsedMediaService $deleteMediaService;
+    private MockObject&UnusedMediaPurger $purger;
 
     private CleanupUnusedDownloadMediaTaskHandler $handler;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
-        $this->deleteMediaService = $this->createMock(DeleteNotUsedMediaService::class);
+        $this->purger = $this->createMock(UnusedMediaPurger::class);
 
         $this->handler = new CleanupUnusedDownloadMediaTaskHandler(
             $this->createMock(EntityRepository::class),
-            $this->deleteMediaService
+            $this->purger
         );
     }
 
     public function testGetHandledMessages(): void
     {
-        static::assertEquals([CleanupUnusedDownloadMediaTask::class], $this->handler::getHandledMessages());
+        static::assertEquals([CleanupUnusedDownloadMediaTask::class], $this->handler->getHandledMessages());
     }
 
     public function testRun(): void
     {
-        $context = Context::createDefaultContext();
-
-        $context->addExtension(
-            DeleteNotUsedMediaService::RESTRICT_DEFAULT_FOLDER_ENTITIES_EXTENSION,
-            new ArrayStruct([ProductDownloadDefinition::ENTITY_NAME])
-        );
-
-        $this->deleteMediaService
+        $this->purger
             ->expects(static::once())
             ->method('deleteNotUsedMedia')
-            ->with($context);
+            ->with(null, null, null, ProductDownloadDefinition::ENTITY_NAME);
 
         $this->handler->run();
     }

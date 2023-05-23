@@ -115,7 +115,7 @@
       "labelStock": "Stock",
       "labelActive": "Active for all selected Sales Channels",
       "labelShippingFree": "Free shipping",
-      "labelMarkAsTopseller": "Product promotion",
+      "labelMarkAsTopseller": "Highlight product",
       "labelIsCloseout": "Clearance sale",
       "isCloseoutHelpText": "Backorders denied.",
       "labelDeliveryTime": "Delivery time",
@@ -218,7 +218,7 @@
     },
     "list": {
       "textProductOverview": "Products",
-      "buttonAddProduct": "Add physical product",
+      "buttonAddProduct": "Add product",
       "buttonAddDownloadableProduct": "Add digital product",
       "buttonCancel": "Cancel",
       "buttonDuplicate": "Duplicate",
@@ -238,6 +238,7 @@
       "columnTags": "Tags",
       "columnActions": "Action(s)",
       "columnMedia": "Media",
+      "columnSales": "Sales",
       "columnDownloadsTooltip": "Digital products must have at least one file attached.",
       "contextMenuEdit": "Edit",
       "contextMenuDelete": "Delete",
@@ -526,9 +527,20 @@
         "label": "Categories",
         "placeholder": "Select categories..."
       },
+      "salesFilter": {
+        "label": "Sales"
+      },
       "tagsFilter": {
         "label": "Tags",
         "placeholder": "Select tags..."
+      },
+      "productStatesFilter": {
+        "label": "Product states",
+        "placeholder": "Select product state...",
+        "options": {
+          "physical": "Physical",
+          "digital": "Digital"
+        }
       },
       "messageEmptyTitle": "Nothing found",
       "messageEmptySubline": "Edit your filters to see results."

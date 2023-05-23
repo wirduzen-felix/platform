@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace unit\php\Core\Content\Flow\Dispatching\Action;
+namespace Shopware\Tests\Unit\Core\Content\Flow\Dispatching\Action;
 
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Order\Aggregate\OrderLineItem\OrderLineItemCollection;
@@ -34,7 +34,7 @@ class GrantDownloadAccessActionTest extends TestCase
      */
     private array $updatePayload = [];
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $orderLineItemDownloadRepository = $this->createMock(EntityRepository::class);
         $orderLineItemDownloadRepository->method('update')->willReturnCallback(
@@ -51,7 +51,7 @@ class GrantDownloadAccessActionTest extends TestCase
 
     public function testGetName(): void
     {
-        static::assertEquals('action.grant.download.access', $this->action::getName());
+        static::assertEquals('action.grant.download.access', $this->action->getName());
     }
 
     public function testGetRequirements(): void

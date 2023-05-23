@@ -13,6 +13,7 @@ use Shopware\Core\Content\Test\Media\MediaFixtures;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 
 /**
@@ -45,7 +46,7 @@ class GenerateThumbnailsHandlerTest extends TestCase
      */
     private $handler;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->urlGenerator = $this->getContainer()->get(UrlGeneratorInterface::class);
         $this->mediaRepository = $this->getContainer()->get('media.repository');
@@ -83,7 +84,12 @@ class GenerateThumbnailsHandlerTest extends TestCase
 
         $msg = new GenerateThumbnailsMessage();
         $msg->setMediaIds([$media->getId()]);
-        $msg->withContext($this->context);
+
+        if (Feature::isActive('v6.6.0.0')) {
+            $msg->setContext($this->context);
+        } else {
+            $msg->withContext($this->context);
+        }
 
         $this->handler->__invoke($msg);
 
@@ -133,7 +139,12 @@ class GenerateThumbnailsHandlerTest extends TestCase
 
         $msg = new UpdateThumbnailsMessage();
         $msg->setMediaIds([$media->getId()]);
-        $msg->withContext($this->context);
+
+        if (Feature::isActive('v6.6.0.0')) {
+            $msg->setContext($this->context);
+        } else {
+            $msg->withContext($this->context);
+        }
 
         $this->handler->__invoke($msg);
 
@@ -179,17 +190,32 @@ class GenerateThumbnailsHandlerTest extends TestCase
 
         $generateMessage = new GenerateThumbnailsMessage();
         $generateMessage->setMediaIds($testEntities1->getIds());
-        $generateMessage->withContext($this->context);
+
+        if (Feature::isActive('v6.6.0.0')) {
+            $generateMessage->setContext($this->context);
+        } else {
+            $generateMessage->withContext($this->context);
+        }
 
         $updateMessage1 = new UpdateThumbnailsMessage();
         $updateMessage1->setMediaIds($testEntities2->getIds());
-        $updateMessage1->withContext($this->context);
         $updateMessage1->setIsStrict(true);
+
+        if (Feature::isActive('v6.6.0.0')) {
+            $updateMessage1->setContext($this->context);
+        } else {
+            $updateMessage1->withContext($this->context);
+        }
 
         $updateMessage2 = new UpdateThumbnailsMessage();
         $updateMessage2->setMediaIds($testEntities3->getIds());
-        $updateMessage2->withContext($this->context);
         $updateMessage2->setIsStrict(false);
+
+        if (Feature::isActive('v6.6.0.0')) {
+            $updateMessage2->setContext($this->context);
+        } else {
+            $updateMessage2->withContext($this->context);
+        }
 
         $thumbnailServiceMock->expects(static::once())
             ->method('generate')
@@ -203,13 +229,18 @@ class GenerateThumbnailsHandlerTest extends TestCase
             ...array_map(fn ($entity) => [$entity, $this->context, false], array_values($testEntities3->getElements())),
         ];
 
+        $parameters = [];
+
         $thumbnailServiceMock->expects(static::exactly($testEntities2->count() + $testEntities3->count()))
             ->method('updateThumbnails')
-            ->withConsecutive(...$consecutiveUpdateMessageParams)
-            ->willReturn(1);
+            ->willReturnCallback(function (...$params) use (&$parameters): void {
+                $parameters[] = $params;
+            });
 
         $handler->__invoke($generateMessage);
         $handler->__invoke($updateMessage1);
         $handler->__invoke($updateMessage2);
+
+        static::assertEquals($consecutiveUpdateMessageParams, $parameters);
     }
 }

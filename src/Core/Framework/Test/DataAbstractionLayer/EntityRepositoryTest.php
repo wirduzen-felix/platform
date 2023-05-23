@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\Test\DataAbstractionLayer;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Customer\Aggregate\CustomerAddress\CustomerAddressDefinition;
@@ -35,6 +36,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\MultiFilter;
 use Shopware\Core\Framework\DataAbstractionLayer\VersionManager;
 use Shopware\Core\Framework\DataAbstractionLayer\Write\CloneBehavior;
+use Shopware\Core\Framework\Feature;
+use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskDefinition;
+use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskEntity;
 use Shopware\Core\Framework\Rule\Container\AndRule;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseHelper\CallableClass;
@@ -845,7 +849,7 @@ class EntityRepositoryTest extends TestCase
             ->fetchAllAssociative(
                 'SELECT id FROM category WHERE parent_id IN (:ids)',
                 ['ids' => [Uuid::fromHexToBytes($id), Uuid::fromHexToBytes($newId)]],
-                ['ids' => Connection::PARAM_STR_ARRAY]
+                ['ids' => ArrayParameterType::STRING]
             );
 
         static::assertCount(4, $childrenIds);
@@ -1311,6 +1315,36 @@ class EntityRepositoryTest extends TestCase
             $currencyCount,
             $result->getEntities()->count()
         );
+    }
+
+    /**
+     * @deprecated tag:v6.6.0 - can be removed when `defaultRunInterval` is required in `ScheduledTaskDefinition`
+     */
+    public function testScheduledTaskBackwardsCompatibility(): void
+    {
+        Feature::skipTestIfActive('v6.6.0.0', $this);
+
+        $repository = $this->createRepository(ScheduledTaskDefinition::class);
+
+        $id = Uuid::randomHex();
+
+        $repository->create([
+            [
+                'id' => $id,
+                'name' => 'test',
+                'scheduledTaskClass' => 'test',
+                'runInterval' => 1,
+                'status' => ScheduledTaskDefinition::STATUS_SCHEDULED,
+            ],
+        ], Context::createDefaultContext());
+
+        $criteria = new Criteria([$id]);
+        $result = $repository->search($criteria, Context::createDefaultContext());
+        static::assertCount(1, $result->getEntities());
+        $task = $result->getEntities()->first();
+        static::assertInstanceOf(ScheduledTaskEntity::class, $task);
+        static::assertEquals(1, $task->getRunInterval());
+        static::assertEquals(1, $task->getDefaultRunInterval());
     }
 
     /**

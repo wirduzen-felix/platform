@@ -101,6 +101,7 @@ class TranslatorTest extends TestCase
         $cache->expects(static::once())->method('get')->willReturnCallback(function (string $key, callable $callback) use ($expectedCacheKey, $item) {
             static::assertEquals($expectedCacheKey, $key);
 
+            /** @var callable(CacheItem): mixed $callback */
             return $callback($item);
         });
 
@@ -117,7 +118,7 @@ class TranslatorTest extends TestCase
     /**
      * @return iterable<string, array<int, string|Request|null>>
      */
-    public function getCatalogueRequestProvider(): iterable
+    public static function getCatalogueRequestProvider(): iterable
     {
         $salesChannelId = Uuid::randomHex();
         $snippetSetId = Uuid::randomHex();
@@ -129,13 +130,13 @@ class TranslatorTest extends TestCase
         ];
         yield 'without snippetSetId' => [
             null,
-            $this->createRequest($salesChannelId, null),
+            self::createRequest($salesChannelId, null),
             null,
         ];
 
         yield 'without salesChannelId' => [
             $snippetSetId,
-            $this->createRequest(null, $snippetSetId),
+            self::createRequest(null, $snippetSetId),
             sprintf('translation.catalog.%s.%s', 'DEFAULT', $snippetSetId),
         ];
 
@@ -147,7 +148,7 @@ class TranslatorTest extends TestCase
         ];
     }
 
-    private function createRequest(?string $salesChannelId, ?string $snippetSetId): Request
+    private static function createRequest(?string $salesChannelId, ?string $snippetSetId): Request
     {
         return new Request(
             [],

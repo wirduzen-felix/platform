@@ -14,9 +14,11 @@ class ThemeAssetPackage extends FallbackUrlPackage
 {
     /**
      * @internal
+     *
+     * @param string|string[] $baseUrls
      */
     public function __construct(
-        $baseUrls,
+        string|array $baseUrls,
         VersionStrategyInterface $versionStrategy,
         private readonly RequestStack $requestStack,
         private readonly AbstractThemePathBuilder $themePathBuilder
@@ -35,7 +37,7 @@ class ThemeAssetPackage extends FallbackUrlPackage
             $url = '/' . $url;
         }
 
-        $url = $this->getVersionStrategy()->applyVersion($this->appendThemePath() . $url);
+        $url = $this->getVersionStrategy()->applyVersion($this->appendThemePath($url) . $url);
 
         if ($this->isAbsoluteUrl($url)) {
             return $url;
@@ -44,7 +46,7 @@ class ThemeAssetPackage extends FallbackUrlPackage
         return $this->getBaseUrl($path) . $url;
     }
 
-    private function appendThemePath(): string
+    private function appendThemePath(string $url): string
     {
         $currentRequest = $this->requestStack->getMainRequest();
 
@@ -57,6 +59,10 @@ class ThemeAssetPackage extends FallbackUrlPackage
 
         if ($themeId === null || $salesChannelId === null) {
             return '';
+        }
+
+        if (str_starts_with($url, '/assets')) {
+            return '/theme/' . $themeId;
         }
 
         return '/theme/' . $this->themePathBuilder->assemblePath($salesChannelId, $themeId);

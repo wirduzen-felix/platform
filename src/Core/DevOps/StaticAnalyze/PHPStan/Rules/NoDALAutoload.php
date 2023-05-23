@@ -5,12 +5,12 @@ namespace Shopware\Core\DevOps\StaticAnalyze\PHPStan\Rules;
 use PhpParser\Node;
 use PhpParser\Node\Expr\New_;
 use PhpParser\Node\Name;
+use PhpParser\Node\Scalar\String_;
 use PHPStan\Analyser\Scope;
 use PHPStan\Reflection\ReflectionProvider;
 use PHPStan\Rules\Rule;
 use PHPStan\Rules\RuleError;
 use PHPStan\Rules\RuleErrorBuilder;
-use PHPStan\Type\Constant\ConstantStringType;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\ManyToOneAssociationField;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\OneToOneAssociationField;
 use Shopware\Core\Framework\Log\Package;
@@ -23,6 +23,8 @@ use Shopware\Core\Framework\Log\Package;
 #[Package('core')]
 class NoDALAutoload implements Rule
 {
+    use InTestClassTrait;
+
     private const ASSOCIATIONS_WITH_AUTOLOAD = [
         OneToOneAssociationField::class,
         ManyToOneAssociationField::class,
@@ -51,9 +53,7 @@ class NoDALAutoload implements Rule
             return [];
         }
 
-        $definitionClassReflection = $scope->getClassReflection()->getNativeReflection();
-        $className = $definitionClassReflection->getName();
-        if (str_contains($className, 'Test')) {
+        if ($this->isInTestClass($scope)) {
             //if in a test namespace, don't care
             return [];
         }
@@ -98,22 +98,29 @@ class NoDALAutoload implements Rule
         $propertyNameValueExpr = $node->getArgs()[$propertyNameParamPosition]->value;
 
         if ($scope->getType($autoloadValueExpr)->isTrue()->yes()) {
-            $constant = $definitionClassReflection->getConstant('ENTITY_NAME');
+            $definitionClassReflection = $scope->getClassReflection()->getNativeReflection();
+
+            $constant = $definitionClassReflection->getReflectionConstant('ENTITY_NAME');
 
             if ($constant === false) {
                 return [];
             }
 
+            $constantValue = $constant->getValueExpression();
+            if (!$constantValue instanceof String_) {
+                return [];
+            }
+
             $propType = $scope->getType($propertyNameValueExpr);
-            if (!$propType instanceof ConstantStringType) {
+            if ($propType->getConstantStrings() === []) {
                 return [];
             }
 
             return [
                 RuleErrorBuilder::message(sprintf(
                     '%s.%s association has a configured autoload===true, this is forbidden for platform integrations',
-                    $constant,
-                    $propType->getValue()
+                    $constantValue->value,
+                    $propType->getConstantStrings()[0]->getValue()
                 ))->build(),
             ];
         }

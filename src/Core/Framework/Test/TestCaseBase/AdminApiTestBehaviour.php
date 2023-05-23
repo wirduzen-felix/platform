@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\Test\TestCaseBase;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
 use PHPUnit\Framework\TestCase;
@@ -46,15 +47,15 @@ trait AdminApiTestBehaviour
             ->get(Connection::class);
 
         try {
-            $connection->executeUpdate(
+            $connection->executeStatement(
                 'DELETE FROM user WHERE username IN (:usernames)',
                 ['usernames' => $this->apiUsernames],
-                ['usernames' => Connection::PARAM_STR_ARRAY]
+                ['usernames' => ArrayParameterType::STRING]
             );
-            $connection->executeUpdate(
+            $connection->executeStatement(
                 'DELETE FROM integration WHERE id IN (:ids)',
                 ['ids' => $this->apiIntegrations],
-                ['ids' => Connection::PARAM_STR_ARRAY]
+                ['ids' => ArrayParameterType::STRING]
             );
         } catch (\Exception) {
             //nth
@@ -198,7 +199,9 @@ trait AdminApiTestBehaviour
             );
         }
 
-        $browser->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $data['access_token']));
+        $accessToken = $data['access_token'];
+        \assert(\is_string($accessToken));
+        $browser->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $accessToken));
         $browser->setServerParameter(PlatformRequest::ATTRIBUTE_CONTEXT_OBJECT, new Context(new AdminApiSource($userId)));
     }
 
@@ -257,11 +260,13 @@ trait AdminApiTestBehaviour
             );
         }
 
-        $browser->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $data['access_token']));
+        $accessToken = $data['access_token'];
+        \assert(\is_string($accessToken));
+        $browser->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $accessToken));
         $browser->setServerParameter('_integration_id', $id);
     }
 
-    abstract protected function getKernel(): KernelInterface;
+    abstract protected static function getKernel(): KernelInterface;
 
     /**
      * @param string[] $scopes

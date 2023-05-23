@@ -27,7 +27,7 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
 
     private Context $context;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->subscriber = new PaymentDistinguishableNameSubscriber();
         $this->context = Context::createDefaultContext();
@@ -39,7 +39,7 @@ class PaymentDistinguishableNameSubscriberTest extends TestCase
             [
                 PaymentEvents::PAYMENT_METHOD_LOADED_EVENT => 'addDistinguishablePaymentName',
             ],
-            $this->subscriber::getSubscribedEvents()
+            $this->subscriber->getSubscribedEvents()
         );
     }
 

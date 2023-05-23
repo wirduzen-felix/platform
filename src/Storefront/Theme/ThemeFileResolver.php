@@ -80,6 +80,7 @@ class ThemeFileResolver
     }
 
     /**
+     * @param callable(StorefrontPluginConfiguration, bool): FileCollection $configFileResolver
      * @param array<int, string> $included
      */
     private function resolve(
@@ -92,7 +93,6 @@ class ThemeFileResolver
         // convertPathsToAbsolute changes the path, this should not affect the passed configuration
         $themeConfig = clone $themeConfig;
 
-        /** @var FileCollection $files */
         $files = $configFileResolver($themeConfig, $onlySourceFiles);
 
         if ($files->count() === 0) {
@@ -120,7 +120,7 @@ class ThemeFileResolver
 
                 throw new ThemeCompileException(
                     $themeConfig->getTechnicalName(),
-                    sprintf('Unable to load file "%s". Did you forget to build the theme? Try running ./psh.phar storefront:build', $filepath)
+                    sprintf('Unable to load file "%s". Did you forget to build the theme? Try running ./bin/build-storefront.sh', $filepath)
                 );
             }
 

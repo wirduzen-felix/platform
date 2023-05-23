@@ -16,6 +16,7 @@ use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskCollection;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskDefinition;
 use Shopware\Core\Framework\MessageQueue\ScheduledTask\ScheduledTaskEntity;
 use Shopware\Elasticsearch\Framework\Indexing\CreateAliasTask;
+use Shopware\Tests\Unit\Common\Stubs\DataAbstractionLayer\StaticEntityRepository;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBag;
 
 /**
@@ -43,47 +44,47 @@ class TaskRegistryTest extends TestCase
             'elasticsearch.enabled' => false,
         ]);
 
-        $registry = new TaskRegistry($tasks, $this->scheduleTaskRepository, $parameterBag);
-
         $registeredTask = new ScheduledTaskEntity();
 
         $registeredTask->setId('1');
         $registeredTask->setName(CleanupCartTask::getTaskName());
         $registeredTask->setRunInterval(CleanupCartTask::getDefaultInterval());
+        $registeredTask->setDefaultRunInterval(CleanupCartTask::getDefaultInterval());
         $registeredTask->setStatus(ScheduledTaskDefinition::STATUS_SCHEDULED);
         $registeredTask->setNextExecutionTime(new \DateTimeImmutable());
         $registeredTask->setScheduledTaskClass(CleanupCartTask::class);
-        $result = $this->createMock(EntitySearchResult::class);
-        $result->method('getEntities')->willReturn(new ScheduledTaskCollection([$registeredTask]));
-        $this->scheduleTaskRepository->expects(static::once())->method('search')->willReturn($result);
-        $this->scheduleTaskRepository->expects(static::never())->method('update');
-        $this->scheduleTaskRepository->expects(static::never())->method('delete');
-        $this->scheduleTaskRepository->expects(static::exactly(2))->method('create')->withConsecutive(
+
+        $staticRepository = new StaticEntityRepository([
+            new ScheduledTaskCollection([$registeredTask]),
+        ]);
+
+        $registry = new TaskRegistry($tasks, $staticRepository, $parameterBag);
+
+        $registry->registerTasks();
+
+        static::assertSame(
             [
                 [
                     [
                         'name' => InvalidateCacheTask::getTaskName(),
                         'scheduledTaskClass' => InvalidateCacheTask::class,
                         'runInterval' => InvalidateCacheTask::getDefaultInterval(),
+                        'defaultRunInterval' => InvalidateCacheTask::getDefaultInterval(),
                         'status' => ScheduledTaskDefinition::STATUS_SCHEDULED,
                     ],
                 ],
-                Context::createDefaultContext(),
-            ],
-            [
                 [
                     [
                         'name' => CreateAliasTask::getTaskName(),
                         'scheduledTaskClass' => CreateAliasTask::class,
                         'runInterval' => CreateAliasTask::getDefaultInterval(),
+                        'defaultRunInterval' => CreateAliasTask::getDefaultInterval(),
                         'status' => ScheduledTaskDefinition::STATUS_SKIPPED,
                     ],
                 ],
-                Context::createDefaultContext(),
-            ]
+            ],
+            $staticRepository->creates
         );
-
-        $registry->registerTasks();
     }
 
     public function testInvalidTasksAreDeleted(): void
@@ -97,6 +98,7 @@ class TaskRegistryTest extends TestCase
         $registeredTask->setId('deletedId');
         $registeredTask->setName(CleanupCartTask::getTaskName());
         $registeredTask->setRunInterval(CleanupCartTask::getDefaultInterval());
+        $registeredTask->setDefaultRunInterval(CleanupCartTask::getDefaultInterval());
         $registeredTask->setStatus(ScheduledTaskDefinition::STATUS_SCHEDULED);
         $registeredTask->setNextExecutionTime(new \DateTimeImmutable());
         $registeredTask->setScheduledTaskClass('InvalidClass');
@@ -132,6 +134,7 @@ class TaskRegistryTest extends TestCase
         $queuedTask->setId('queuedTask');
         $queuedTask->setName(InvalidateCacheTask::getTaskName());
         $queuedTask->setRunInterval(InvalidateCacheTask::getDefaultInterval());
+        $queuedTask->setDefaultRunInterval(InvalidateCacheTask::getDefaultInterval());
         $queuedTask->setStatus(ScheduledTaskDefinition::STATUS_QUEUED);
         $queuedTask->setNextExecutionTime(new \DateTimeImmutable());
         $queuedTask->setScheduledTaskClass(InvalidateCacheTask::class);
@@ -139,6 +142,7 @@ class TaskRegistryTest extends TestCase
         $scheduledTask->setId('scheduledTask');
         $scheduledTask->setName(CreateAliasTask::getTaskName());
         $scheduledTask->setRunInterval(CreateAliasTask::getDefaultInterval());
+        $scheduledTask->setDefaultRunInterval(CreateAliasTask::getDefaultInterval());
         $scheduledTask->setStatus(ScheduledTaskDefinition::STATUS_SCHEDULED);
         $scheduledTask->setNextExecutionTime(new \DateTimeImmutable());
         $scheduledTask->setScheduledTaskClass(CreateAliasTask::class);
@@ -192,6 +196,7 @@ class TaskRegistryTest extends TestCase
         $queuedTask->setId('queuedTask');
         $queuedTask->setName(InvalidateCacheTask::getTaskName());
         $queuedTask->setRunInterval(InvalidateCacheTask::getDefaultInterval());
+        $queuedTask->setDefaultRunInterval(InvalidateCacheTask::getDefaultInterval());
         $queuedTask->setStatus(ScheduledTaskDefinition::STATUS_QUEUED);
         $queuedTask->setNextExecutionTime(new \DateTimeImmutable());
         $queuedTask->setScheduledTaskClass(InvalidateCacheTask::class);
@@ -199,6 +204,7 @@ class TaskRegistryTest extends TestCase
         $skippedTask->setId('skippedTask');
         $skippedTask->setName(CreateAliasTask::getTaskName());
         $skippedTask->setRunInterval(CreateAliasTask::getDefaultInterval());
+        $skippedTask->setDefaultRunInterval(CreateAliasTask::getDefaultInterval());
         $skippedTask->setStatus(ScheduledTaskDefinition::STATUS_SKIPPED);
         $skippedTask->setNextExecutionTime(new \DateTimeImmutable());
         $skippedTask->setScheduledTaskClass(CreateAliasTask::class);
@@ -224,6 +230,82 @@ class TaskRegistryTest extends TestCase
             static::assertEquals('queuedTask', $queueTaskPayload['id']);
             static::assertEquals(ScheduledTaskDefinition::STATUS_SCHEDULED, $skippedTaskPayload['status']);
             static::assertEquals('skippedTask', $skippedTaskPayload['id']);
+
+            return new EntityWrittenContainerEvent($context, new NestedEventCollection(), []);
+        });
+
+        $this->scheduleTaskRepository->expects(static::never())->method('delete');
+        $this->scheduleTaskRepository->expects(static::never())->method('create');
+
+        $registry->registerTasks();
+    }
+
+    public function testDefaultRunIntervalIsUpdatedIfItChanged(): void
+    {
+        $tasks = [new CleanupCartTask()];
+
+        $registry = new TaskRegistry($tasks, $this->scheduleTaskRepository, new ParameterBag([]));
+
+        $taskEntity = new ScheduledTaskEntity();
+        $taskEntity->setId('cleanupTask');
+        $taskEntity->setName(CleanupCartTask::getTaskName());
+        $taskEntity->setRunInterval(10);
+        $taskEntity->setDefaultRunInterval(20);
+        $taskEntity->setStatus(ScheduledTaskDefinition::STATUS_SCHEDULED);
+        $taskEntity->setNextExecutionTime(new \DateTimeImmutable());
+        $taskEntity->setScheduledTaskClass(CleanupCartTask::class);
+
+        $result = $this->createMock(EntitySearchResult::class);
+        $result->method('getEntities')->willReturn(new ScheduledTaskCollection([$taskEntity]));
+
+        $this->scheduleTaskRepository->expects(static::once())->method('search')->willReturn($result);
+
+        $this->scheduleTaskRepository->expects(static::exactly(1))->method('update')->willReturnCallback(function (array $data, Context $context) {
+            static::assertCount(1, $data);
+
+            static::assertNotEmpty($data[0]);
+
+            static::assertEquals('cleanupTask', $data[0]['id']);
+            static::assertEquals(CleanupCartTask::getDefaultInterval(), $data[0]['defaultRunInterval']);
+            static::assertArrayNotHasKey('runInterval', $data[0]);
+
+            return new EntityWrittenContainerEvent($context, new NestedEventCollection(), []);
+        });
+
+        $this->scheduleTaskRepository->expects(static::never())->method('delete');
+        $this->scheduleTaskRepository->expects(static::never())->method('create');
+
+        $registry->registerTasks();
+    }
+
+    public function testRunIntervalIsUpdatedIfItMatchesDefault(): void
+    {
+        $tasks = [new CleanupCartTask()];
+
+        $registry = new TaskRegistry($tasks, $this->scheduleTaskRepository, new ParameterBag([]));
+
+        $taskEntity = new ScheduledTaskEntity();
+        $taskEntity->setId('cleanupTask');
+        $taskEntity->setName(CleanupCartTask::getTaskName());
+        $taskEntity->setRunInterval(10);
+        $taskEntity->setDefaultRunInterval(10);
+        $taskEntity->setStatus(ScheduledTaskDefinition::STATUS_SCHEDULED);
+        $taskEntity->setNextExecutionTime(new \DateTimeImmutable());
+        $taskEntity->setScheduledTaskClass(CleanupCartTask::class);
+
+        $result = $this->createMock(EntitySearchResult::class);
+        $result->method('getEntities')->willReturn(new ScheduledTaskCollection([$taskEntity]));
+
+        $this->scheduleTaskRepository->expects(static::once())->method('search')->willReturn($result);
+
+        $this->scheduleTaskRepository->expects(static::exactly(1))->method('update')->willReturnCallback(function (array $data, Context $context) {
+            static::assertCount(1, $data);
+
+            static::assertNotEmpty($data[0]);
+
+            static::assertEquals('cleanupTask', $data[0]['id']);
+            static::assertEquals(CleanupCartTask::getDefaultInterval(), $data[0]['defaultRunInterval']);
+            static::assertEquals(CleanupCartTask::getDefaultInterval(), $data[0]['runInterval']);
 
             return new EntityWrittenContainerEvent($context, new NestedEventCollection(), []);
         });

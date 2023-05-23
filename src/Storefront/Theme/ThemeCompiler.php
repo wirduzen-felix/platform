@@ -31,7 +31,7 @@ class ThemeCompiler implements ThemeCompilerInterface
     /**
      * @internal
      *
-     * @param Package[] $packages
+     * @param array<string, Package> $packages
      */
     public function __construct(
         private readonly FilesystemOperator $filesystem,
@@ -46,7 +46,8 @@ class ThemeCompiler implements ThemeCompilerInterface
         private readonly string $projectDir,
         private readonly AbstractScssCompiler $scssCompiler,
         private readonly MessageBusInterface $messageBus,
-        private readonly int $themeFileDeleteDelay
+        private readonly int $themeFileDeleteDelay,
+        private readonly bool $autoPrefix = false
     ) {
     }
 
@@ -58,39 +59,68 @@ class ThemeCompiler implements ThemeCompilerInterface
         bool $withAssets,
         Context $context
     ): void {
-        $resolvedFiles = $this->themeFileResolver->resolveFiles($themeConfig, $configurationCollection, false);
+        try {
+            $resolvedFiles = $this->themeFileResolver->resolveFiles($themeConfig, $configurationCollection, false);
 
-        $styleFiles = $resolvedFiles[ThemeFileResolver::STYLE_FILES];
+            $styleFiles = $resolvedFiles[ThemeFileResolver::STYLE_FILES];
+        } catch (\Throwable $e) {
+            throw new ThemeCompileException(
+                $themeConfig->getName() ?? '',
+                'Files could not be resolved with error: ' . $e->getMessage(),
+                $e
+            );
+        }
 
-        $concatenatedStyles = $this->concatenateStyles(
-            $styleFiles,
-            $themeConfig,
-            $salesChannelId
-        );
+        try {
+            $concatenatedStyles = $this->concatenateStyles(
+                $styleFiles,
+                $themeConfig,
+                $salesChannelId
+            );
+        } catch (\Throwable $e) {
+            throw new ThemeCompileException(
+                $themeConfig->getName() ?? '',
+                'Error while trying to concatenate Styles: ' . $e->getMessage(),
+                $e
+            );
+        }
 
         $compiled = $this->compileStyles(
             $concatenatedStyles,
             $themeConfig,
             $styleFiles->getResolveMappings(),
             $salesChannelId,
+            $themeId,
             $context
         );
 
-        $concatenatedScripts = $this->getConcatenatedScripts($resolvedFiles[ThemeFileResolver::SCRIPT_FILES], $themeConfig, $salesChannelId);
+        try {
+            $concatenatedScripts = $this->getConcatenatedScripts($resolvedFiles[ThemeFileResolver::SCRIPT_FILES], $themeConfig, $salesChannelId);
+        } catch (\Throwable $e) {
+            throw new ThemeCompileException(
+                $themeConfig->getName() ?? '',
+                'Error while trying to concatenate Scripts: ' . $e->getMessage(),
+                $e
+            );
+        }
 
         $newThemeHash = Uuid::randomHex();
         $themePrefix = $this->themePathBuilder->generateNewPath($salesChannelId, $themeId, $newThemeHash);
         $oldThemePrefix = $this->themePathBuilder->assemblePath($salesChannelId, $themeId);
 
         try {
-            $this->writeCompiledFiles($themePrefix, $compiled, $concatenatedScripts, $withAssets, $themeConfig, $configurationCollection);
+            $this->writeCompiledFiles($themePrefix, $themeId, $compiled, $concatenatedScripts, $withAssets, $themeConfig, $configurationCollection);
         } catch (\Throwable $e) {
             // delete folder in case of error and rethrow exception
             if ($themePrefix !== $oldThemePrefix) {
                 $this->filesystem->deleteDirectory($themePrefix);
             }
 
-            throw $e;
+            throw new ThemeCompileException(
+                $themeConfig->getName() ?? '',
+                'Error while trying to write compiled files: ' . $e->getMessage(),
+                $e
+            );
         }
 
         $this->themePathBuilder->saveSeed($salesChannelId, $themeId, $newThemeHash);
@@ -173,7 +203,6 @@ class ThemeCompiler implements ThemeCompilerInterface
 
             $assets = $this->themeFileImporter->getCopyBatchInputsForAssets($asset, $outputPath, $configuration);
 
-            // method copyBatch is provided by copyBatch filesystem plugin
             CopyBatch::copy($this->filesystem, ...$assets);
         }
     }
@@ -186,30 +215,31 @@ class ThemeCompiler implements ThemeCompilerInterface
         StorefrontPluginConfiguration $configuration,
         array $resolveMappings,
         string $salesChannelId,
+        string $themeId,
         Context $context
     ): string {
-        $variables = $this->dumpVariables($configuration->getThemeConfig() ?? [], $salesChannelId, $context);
-        $features = $this->getFeatureConfigScssMap();
-
-        $resolveImportPath = $this->getResolveImportPathsCallback($resolveMappings);
-
-        $importPaths = [];
-
-        $cwd = \getcwd();
-        if ($cwd !== false) {
-            $importPaths[] = $cwd;
-        }
-
-        $importPaths[] = $resolveImportPath;
-
-        $compilerConfig = new CompilerConfiguration(
-            [
-                'importPaths' => $importPaths,
-                'outputStyle' => $this->debug ? OutputStyle::EXPANDED : OutputStyle::COMPRESSED,
-            ]
-        );
-
         try {
+            $variables = $this->dumpVariables($configuration->getThemeConfig() ?? [], $themeId, $salesChannelId, $context);
+            $features = $this->getFeatureConfigScssMap();
+
+            $resolveImportPath = $this->getResolveImportPathsCallback($resolveMappings);
+
+            $importPaths = [];
+
+            $cwd = \getcwd();
+            if ($cwd !== false) {
+                $importPaths[] = $cwd;
+            }
+
+            $importPaths[] = $resolveImportPath;
+
+            $compilerConfig = new CompilerConfiguration(
+                [
+                    'importPaths' => $importPaths,
+                    'outputStyle' => $this->debug ? OutputStyle::EXPANDED : OutputStyle::COMPRESSED,
+                ]
+            );
+
             $cssOutput = $this->scssCompiler->compileString(
                 $compilerConfig,
                 $features . $variables . $concatenatedStyles
@@ -217,20 +247,24 @@ class ThemeCompiler implements ThemeCompilerInterface
         } catch (\Throwable $exception) {
             throw new ThemeCompileException(
                 $configuration->getTechnicalName(),
-                $exception->getMessage()
-            );
-        }
-        $autoPreFixer = new Autoprefixer($cssOutput);
-        /** @var string|false $compiled */
-        $compiled = $autoPreFixer->compile($this->debug);
-        if ($compiled === false) {
-            throw new ThemeCompileException(
-                $configuration->getTechnicalName(),
-                'CSS parser not initialized'
+                $exception->getMessage(),
+                $exception
             );
         }
 
-        return $compiled;
+        if ($this->autoPrefix === true) {
+            $autoPreFixer = new Autoprefixer($cssOutput);
+            /** @var string|false $cssOutput */
+            $cssOutput = $autoPreFixer->compile($this->debug);
+            if ($cssOutput === false) {
+                throw new ThemeCompileException(
+                    $configuration->getTechnicalName(),
+                    'CSS parser not initialized'
+                );
+            }
+        }
+
+        return $cssOutput;
     }
 
     private function getImportFileExtension(string $extension): string
@@ -280,9 +314,12 @@ class ThemeCompiler implements ThemeCompilerInterface
     /**
      * @param array{fields?: array{value: null|string|array<mixed>, scss?: bool, type: string}[]} $config
      */
-    private function dumpVariables(array $config, string $salesChannelId, Context $context): string
+    private function dumpVariables(array $config, string $themeId, string $salesChannelId, Context $context): string
     {
-        $variables = [];
+        $variables = [
+            'theme-id' => $themeId,
+        ];
+
         foreach ($config['fields'] ?? [] as $key => $data) {
             if (!\is_array($data) || !$this->isDumpable($data)) {
                 continue;
@@ -395,6 +432,7 @@ PHP_EOL;
 
     private function writeCompiledFiles(
         string $themePrefix,
+        string $themeId,
         string $compiled,
         string $concatenatedScripts,
         bool $withAssets,
@@ -415,7 +453,12 @@ PHP_EOL;
 
         // assets
         if ($withAssets) {
-            $this->copyAssets($themeConfig, $configurationCollection, $path);
+            $assetPath = 'theme' . \DIRECTORY_SEPARATOR . $themeId;
+            if ($this->filesystem->has($assetPath)) {
+                $this->filesystem->deleteDirectory($assetPath);
+            }
+
+            $this->copyAssets($themeConfig, $configurationCollection, $assetPath);
         }
     }
 }

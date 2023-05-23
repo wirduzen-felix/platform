@@ -110,7 +110,7 @@ class SalesChannelProxyController extends AbstractController
         $userId = $userId ? Uuid::fromHexToBytes($userId) : null;
 
         $context->scope(Context::SYSTEM_SCOPE, function () use ($orderId, $userId): void {
-            $this->connection->executeUpdate(
+            $this->connection->executeStatement(
                 'UPDATE `order` SET `created_by_id` = :createdById WHERE `id` = :id',
                 ['createdById' => $userId, 'id' => Uuid::fromHexToBytes($orderId)]
             );
@@ -202,6 +202,9 @@ class SalesChannelProxyController extends AbstractController
         return new JsonResponse();
     }
 
+    /**
+     * @param callable(): Response $call
+     */
     private function wrapInSalesChannelApiRoute(Request $request, callable $call): Response
     {
         $requestStackBackup = $this->clearRequestStackWithBackup($this->requestStack);

@@ -17,8 +17,10 @@ use Shopware\Core\Framework\Plugin\KernelPluginLoader\KernelPluginLoader;
 use Shopware\Core\Framework\Plugin\KernelPluginLoader\StaticKernelPluginLoader;
 use Shopware\Core\Framework\Plugin\PluginCollection;
 use Shopware\Core\Framework\Plugin\PluginLifecycleService;
+use Shopware\Core\Framework\Plugin\PluginService;
 use Shopware\Core\Framework\Plugin\Requirement\RequirementsValidator;
 use Shopware\Core\Framework\Plugin\Util\AssetService;
+use Shopware\Core\Framework\Plugin\Util\VersionSanitizer;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Kernel;
@@ -41,7 +43,7 @@ class KernelPluginIntegrationTest extends TestCase
 
     private ?Kernel $kernel = null;
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         if ($this->kernel) {
             /** @var TestContainer $serviceContainer */
@@ -84,7 +86,7 @@ class KernelPluginIntegrationTest extends TestCase
     {
         $this->insertPlugin($this->getActivePlugin());
 
-        $this->connection->executeUpdate('UPDATE plugin SET active = 1, installed_at = date(now())');
+        $this->connection->executeStatement('UPDATE plugin SET active = 1, installed_at = date(now())');
 
         $loader = new DbalKernelPluginLoader($this->classLoader, null, $this->connection);
         $this->kernel = $this->makeKernel($loader);
@@ -359,6 +361,8 @@ class KernelPluginIntegrationTest extends TestCase
             $this->createMock(CustomEntityPersister::class),
             $this->createMock(CustomEntitySchemaUpdater::class),
             $this->createMock(CustomEntityLifecycleService::class),
+            $this->createMock(PluginService::class),
+            $this->createMock(VersionSanitizer::class),
         );
     }
 

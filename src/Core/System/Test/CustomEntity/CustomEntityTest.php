@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\System\Test\CustomEntity;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Doctrine\DBAL\Exception\TableNotFoundException;
 use Doctrine\DBAL\Schema\Schema;
@@ -118,6 +119,8 @@ class CustomEntityTest extends TestCase
 
         $categories = $container->get(Connection::class)->fetchAllAssociative('SELECT LOWER(HEX(id)), `type` FROM category WHERE `type` = :type', ['type' => self::CATEGORY_TYPE]);
         static::assertCount(0, $categories);
+
+        $container->get(Connection::class)->executeStatement('DROP TABLE IF EXISTS `test_with_enum_column`');
     }
 
     /**
@@ -224,12 +227,36 @@ class CustomEntityTest extends TestCase
         self::cleanUp($this->getContainer());
     }
 
+    public function testPersistsCustomEntitiesIfSchemaContainsEnumColumns(): void
+    {
+        $connection = $this->getContainer()->get(Connection::class);
+
+        $connection->executeStatement('
+            CREATE TABLE test_with_enum_column (
+                id BINARY(16) NOT NULL PRIMARY KEY,
+                enum_column ENUM(\'foo\', \'bar\') DEFAULT NULL
+            )
+        ');
+
+        $columns = $connection->executeQuery('DESCRIBE test_with_enum_column')->fetchAllAssociative();
+
+        $this->loadAppsFromDir(__DIR__ . '/_fixtures/custom-entity-test', false);
+
+        $schema = $this->getSchema();
+        static::assertTrue($schema->hasTable('test_with_enum_column'));
+        static::assertTrue($schema->hasTable('custom_entity_blog'));
+        static::assertTrue($schema->hasTable('ce_blog_comment'));
+        static::assertEquals($columns, $connection->executeQuery('DESCRIBE test_with_enum_column')->fetchAllAssociative());
+
+        self::cleanUp($this->getContainer());
+    }
+
     private function testStorage(ContainerInterface $container): void
     {
         $schema = $container
             ->get(Connection::class)
-            ->getSchemaManager()
-            ->createSchema();
+            ->createSchemaManager()
+            ->introspectSchema();
 
         self::assertColumns($schema, 'custom_entity_blog', ['id', 'top_seller_restrict_id', 'top_seller_restrict_version_id', 'top_seller_cascade_id', 'top_seller_cascade_version_id', 'top_seller_set_null_id', 'top_seller_set_null_version_id', 'link_product_restrict_id', 'link_product_restrict_version_id', 'link_product_cascade_id', 'link_product_cascade_version_id', 'link_product_set_null_id', 'link_product_set_null_version_id', 'inherited_top_seller_id', 'inherited_top_seller_version_id', 'created_at', 'updated_at', 'position', 'rating', 'payload', 'email']);
         self::assertColumns($schema, 'custom_entity_blog_translation', ['custom_entity_blog_id', 'language_id', 'created_at', 'updated_at', 'title', 'content', 'display']);
@@ -859,7 +886,7 @@ class CustomEntityTest extends TestCase
         ];
 
         $browser = $this->getSalesChannelBrowser();
-        $browser->request('POST', '/store-api/script/repository-test', $criteria);
+        $browser->request('POST', '/store-api/script/blog', $criteria);
 
         $response = \json_decode((string) $browser->getResponse()->getContent(), true, 512, \JSON_THROW_ON_ERROR);
 
@@ -869,12 +896,12 @@ class CustomEntityTest extends TestCase
         static::assertSame(Response::HTTP_OK, $browser->getResponse()->getStatusCode(), print_r($response, true));
 
         $traces = $this->getScriptTraces();
-        static::assertArrayHasKey('store-api-repository-test::response', $traces);
-        static::assertCount(1, $traces['store-api-repository-test::response']);
-        static::assertSame('some debug information', $traces['store-api-repository-test::response'][0]['output'][0]);
+        static::assertArrayHasKey('store-api-blog::response', $traces);
+        static::assertCount(1, $traces['store-api-blog::response']);
+        static::assertSame('some debug information', $traces['store-api-blog::response'][0]['output'][0]);
 
         $expected = [
-            'apiAlias' => 'store_api_repository_test_response',
+            'apiAlias' => 'store_api_blog_response',
             'blogs' => [
                 'apiAlias' => 'dal_entity_search_result',
                 'elements' => [
@@ -970,8 +997,8 @@ class CustomEntityTest extends TestCase
     {
         return $this->getContainer()
             ->get(Connection::class)
-            ->getSchemaManager()
-            ->createSchema();
+            ->createSchemaManager()
+            ->introspectSchema();
     }
 
     private static function cleanUp(ContainerInterface $container): void
@@ -990,7 +1017,7 @@ class CustomEntityTest extends TestCase
         $container->get(Connection::class)->executeStatement(
             'DELETE FROM app WHERE name IN (:name)',
             ['name' => ['custom-entity-test', 'store-api-custom-entity-test']],
-            ['name' => Connection::PARAM_STR_ARRAY]
+            ['name' => ArrayParameterType::STRING]
         );
 
         $container->get(CustomEntitySchemaUpdater::class)->update();

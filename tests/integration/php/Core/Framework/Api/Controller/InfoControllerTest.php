@@ -50,6 +50,8 @@ class InfoControllerTest extends TestCase
             'versionRevision' => str_repeat('0', 32),
             'adminWorker' => [
                 'enableAdminWorker' => $this->getContainer()->getParameter('shopware.admin_worker.enable_admin_worker'),
+                'enableQueueStatsWorker' => $this->getContainer()->getParameter('shopware.admin_worker.enable_queue_stats_worker'),
+                'enableNotificationWorker' => $this->getContainer()->getParameter('shopware.admin_worker.enable_notification_worker'),
                 'transports' => $this->getContainer()->getParameter('shopware.admin_worker.transports'),
             ],
             'bundles' => [],
@@ -308,6 +310,8 @@ class InfoControllerTest extends TestCase
                 'kernel.shopware_version' => 'shopware-version',
                 'kernel.shopware_version_revision' => 'shopware-version-revision',
                 'shopware.admin_worker.enable_admin_worker' => 'enable-admin-worker',
+                'shopware.admin_worker.enable_queue_stats_worker' => 'enable-queue-stats-worker',
+                'shopware.admin_worker.enable_notification_worker' => 'enable-notification-worker',
                 'shopware.admin_worker.transports' => 'transports',
                 'shopware.filesystem.private_allowed_extensions' => ['png'],
             ]),
@@ -351,6 +355,62 @@ class InfoControllerTest extends TestCase
         );
     }
 
+    public function testBundlePathsWithMarkerOnly(): void
+    {
+        $kernelMock = $this->createMock(Kernel::class);
+        $packagesMock = $this->createMock(Packages::class);
+        $eventCollector = $this->createMock(FlowActionCollector::class);
+        $infoController = new InfoController(
+            $this->createMock(DefinitionService::class),
+            new ParameterBag([
+                'kernel.shopware_version' => 'shopware-version',
+                'kernel.shopware_version_revision' => 'shopware-version-revision',
+                'shopware.admin_worker.enable_admin_worker' => 'enable-admin-worker',
+                'shopware.admin_worker.enable_queue_stats_worker' => 'enable-queue-stats-worker',
+                'shopware.admin_worker.enable_notification_worker' => 'enable-notification-worker',
+                'shopware.admin_worker.transports' => 'transports',
+                'shopware.filesystem.private_allowed_extensions' => ['png'],
+            ]),
+            $kernelMock,
+            $packagesMock,
+            $this->createMock(BusinessEventCollector::class),
+            $this->getContainer()->get('shopware.increment.gateway.registry'),
+            $this->getContainer()->get(Connection::class),
+            $this->getContainer()->get(AppUrlVerifier::class),
+            $eventCollector,
+            true,
+            []
+        );
+
+        $infoController->setContainer($this->createMock(Container::class));
+
+        $assetPackage = $this->createMock(Package::class);
+        $packagesMock
+            ->expects(static::exactly(1))
+            ->method('getPackage')
+            ->willReturn($assetPackage);
+        $assetPackage
+            ->expects(static::exactly(1))
+            ->method('getUrl')
+            ->willReturnArgument(0);
+
+        $kernelMock
+            ->expects(static::exactly(1))
+            ->method('getBundles')
+            ->willReturn([new BundleFixture('SomeFunctionalityBundle', __DIR__ . '/Fixtures/InfoControllerWithMarker')]);
+
+        $content = $infoController->config(Context::createDefaultContext(), Request::create('http://localhost'))->getContent();
+        static::assertNotFalse($content);
+        $config = json_decode($content, true, 512, \JSON_THROW_ON_ERROR);
+        static::assertArrayHasKey('SomeFunctionalityBundle', $config['bundles']);
+
+        $jsFilePath = explode('?', (string) $config['bundles']['SomeFunctionalityBundle']['js'][0])[0];
+        static::assertEquals(
+            'bundles/somefunctionality/administration/js/some-functionality-bundle.js',
+            $jsFilePath
+        );
+    }
+
     public function testBaseAdminPaths(): void
     {
         $this->loadAppsFromDir(__DIR__ . '/Fixtures/AdminExtensionApiApp');
@@ -363,6 +423,8 @@ class InfoControllerTest extends TestCase
                 'kernel.shopware_version' => 'shopware-version',
                 'kernel.shopware_version_revision' => 'shopware-version-revision',
                 'shopware.admin_worker.enable_admin_worker' => 'enable-admin-worker',
+                'shopware.admin_worker.enable_queue_stats_worker' => 'enable-queue-stats-worker',
+                'shopware.admin_worker.enable_notification_worker' => 'enable-notification-worker',
                 'shopware.admin_worker.transports' => 'transports',
                 'shopware.filesystem.private_allowed_extensions' => ['png'],
             ]),

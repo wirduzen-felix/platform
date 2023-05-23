@@ -8,6 +8,7 @@ use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Validation\Constraint\Uuid;
 use Symfony\Component\Validator\Constraint;
 use Symfony\Component\Validator\Constraints\Collection;
+use Symfony\Component\Validator\Constraints\GroupSequence;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\NotNull;
@@ -36,7 +37,7 @@ class HappyPathValidator implements ValidatorInterface
     /**
      * @param Constraint|Constraint[]|null $constraints
      */
-    public function validate(mixed $value, $constraints = null, $groups = null): ConstraintViolationListInterface
+    public function validate(mixed $value, Constraint|array $constraints = null, string|GroupSequence|array $groups = null): ConstraintViolationListInterface
     {
         if ($constraints === null) {
             return $this->inner->validate($value, $constraints, $groups);
@@ -64,15 +65,12 @@ class HappyPathValidator implements ValidatorInterface
         return $this->inner->hasMetadataFor($value);
     }
 
-    /**
-     * @param object $object can not use native type hint as it is incompatible with symfony <5.3.4
-     */
-    public function validateProperty($object, $propertyName, $groups = null): ConstraintViolationListInterface
+    public function validateProperty(object $object, string $propertyName, string|GroupSequence|array $groups = null): ConstraintViolationListInterface
     {
         return $this->inner->validateProperty($object, $propertyName, $groups);
     }
 
-    public function validatePropertyValue($objectOrClass, $propertyName, $value, $groups = null): ConstraintViolationListInterface
+    public function validatePropertyValue(object|string $objectOrClass, string $propertyName, mixed $value, string|GroupSequence|array $groups = null): ConstraintViolationListInterface
     {
         return $this->inner->validatePropertyValue($objectOrClass, $propertyName, $value, $groups);
     }
@@ -88,12 +86,9 @@ class HappyPathValidator implements ValidatorInterface
     }
 
     /**
-     * @param string|int|float|bool|array|object|callable|resource|null $value
-     * @param Constraint|Constraint[]|null                              $constraint
-     *
-     * @return string|int|float|bool|array|object|callable|resource|null
+     * @param Constraint|Constraint[]|null $constraint
      */
-    private function normalizeValueIfRequired($value, $constraint)
+    private function normalizeValueIfRequired(mixed $value, Constraint|array|null $constraint): mixed
     {
         if (!$constraint instanceof Constraint) {
             return $value;
@@ -113,14 +108,14 @@ class HappyPathValidator implements ValidatorInterface
             return $value;
         }
 
+        /** @var callable(mixed): mixed $normalizer */
         return $normalizer($value);
     }
 
     /**
-     * @param string|int|float|bool|array|object|callable|resource|null $value
-     * @param Constraint|Constraint[]|null                              $constraint
+     * @param Constraint|Constraint[]|null $constraint
      */
-    private function validateConstraint($value, $constraint): bool
+    private function validateConstraint(mixed $value, Constraint|array|null $constraint): bool
     {
         // apply defined normalizers to check $value from constraint if defined
         $value = $this->normalizeValueIfRequired(
@@ -157,11 +152,11 @@ class HappyPathValidator implements ValidatorInterface
                     $ctypeFunction = 'ctype_' . $type;
 
                     if (\function_exists($isFunction)) {
-                        if (\is_callable($isFunction) && !$isFunction($value)) {
+                        if (\is_callable($isFunction) && !$isFunction($value)) { /* @phpstan-ignore-line */
                             return false;
                         }
                     } elseif (\function_exists($ctypeFunction)) {
-                        if (\is_callable($ctypeFunction) && !$ctypeFunction($value)) {
+                        if (\is_callable($ctypeFunction) && !$ctypeFunction($value)) { /* @phpstan-ignore-line */
                             return false;
                         }
                     } elseif (!$value instanceof $type) {
@@ -208,13 +203,14 @@ class HappyPathValidator implements ValidatorInterface
 
             case $constraint instanceof Collection:
                 foreach ($constraint->fields as $field => $fieldConstraint) {
+                    \assert($fieldConstraint instanceof Constraint);
                     // bug fix issue #2779
                     $existsInArray = \is_array($value) && \array_key_exists($field, $value);
                     $existsInArrayAccess = $value instanceof \ArrayAccess && $value->offsetExists($field);
 
-                    if ($existsInArray || $existsInArrayAccess) {
+                    if (($existsInArray || $existsInArrayAccess) && property_exists($fieldConstraint, 'constraints')) {
                         if ((is_countable($fieldConstraint->constraints) ? \count($fieldConstraint->constraints) : 0) > 0) {
-                            /** @var array|\ArrayAccess<string|int, mixed> $value */
+                            /** @var array<mixed>|\ArrayAccess<string|int, mixed> $value */
                             if (!$this->validateConstraint($value[$field], $fieldConstraint->constraints)) {
                                 return false;
                             }

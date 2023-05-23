@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Content\Rule\DataAbstractionLayer;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Rule\DataAbstractionLayer\Indexing\ConditionTypeNotFound;
 use Shopware\Core\Framework\App\Event\AppScriptConditionEvents;
@@ -51,9 +52,9 @@ class RulePayloadUpdater implements EventSubscriberInterface
             FROM rule_condition rc
             LEFT JOIN app_script_condition rs ON rc.script_id = rs.id AND rs.active = 1
             WHERE rc.rule_id IN (:ids)
-            ORDER BY rc.rule_id',
+            ORDER BY rc.rule_id, rc.position',
             ['ids' => Uuid::fromHexToBytesList($ids)],
-            ['ids' => Connection::PARAM_STR_ARRAY]
+            ['ids' => ArrayParameterType::STRING]
         );
 
         $rules = FetchModeHelper::group($conditions);
@@ -100,7 +101,7 @@ class RulePayloadUpdater implements EventSubscriberInterface
                 INNER JOIN app_script_condition rs ON rc.script_id = rs.id
                 WHERE rs.id IN (:ids)',
             ['ids' => Uuid::fromHexToBytesList(array_values($event->getIds()))],
-            ['ids' => Connection::PARAM_STR_ARRAY]
+            ['ids' => ArrayParameterType::STRING]
         );
 
         if (empty($ruleIds)) {

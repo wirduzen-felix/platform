@@ -2,6 +2,7 @@
 
 namespace Shopware\Elasticsearch\Product;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use OpenSearchDSL\Query\Compound\BoolQuery;
 use Psr\EventDispatcher\EventDispatcherInterface;
@@ -132,9 +133,13 @@ class ElasticsearchProductDefinition extends AbstractElasticsearchDefinition
                 'ratingAverage' => self::FLOAT_FIELD,
                 'releaseDate' => [
                     'type' => 'date',
+                    'format' => 'yyyy-MM-dd HH:mm:ss.000||strict_date_optional_time||epoch_millis',
+                    'ignore_malformed' => true,
                 ],
                 'createdAt' => [
                     'type' => 'date',
+                    'format' => 'yyyy-MM-dd HH:mm:ss.000||strict_date_optional_time||epoch_millis',
+                    'ignore_malformed' => true,
                 ],
                 'sales' => self::INT_FIELD,
                 'stock' => self::INT_FIELD,
@@ -152,7 +157,7 @@ class ElasticsearchProductDefinition extends AbstractElasticsearchDefinition
                 'visibilities' => [
                     'type' => 'nested',
                     'properties' => [
-                        'id' => self::KEYWORD_FIELD,
+                        'salesChannelId' => self::KEYWORD_FIELD,
                         'visibility' => self::INT_FIELD,
                         '_count' => self::INT_FIELD,
                     ],
@@ -465,8 +470,8 @@ SQL;
                 'liveVersionId' => Uuid::fromHexToBytes($context->getVersionId()),
             ],
             [
-                'ids' => Connection::PARAM_STR_ARRAY,
-                'languageIds' => Connection::PARAM_STR_ARRAY,
+                'ids' => ArrayParameterType::STRING,
+                'languageIds' => ArrayParameterType::STRING,
             ]
         );
 
@@ -561,8 +566,8 @@ SQL;
                 'languageIds' => Uuid::fromHexToBytesList($context->getLanguageIdChain()),
             ],
             [
-                'ids' => Connection::PARAM_STR_ARRAY,
-                'languageIds' => Connection::PARAM_STR_ARRAY,
+                'ids' => ArrayParameterType::STRING,
+                'languageIds' => ArrayParameterType::STRING,
             ]
         );
 

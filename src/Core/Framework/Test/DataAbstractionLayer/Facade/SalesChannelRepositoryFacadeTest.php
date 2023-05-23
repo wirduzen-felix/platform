@@ -42,7 +42,7 @@ class SalesChannelRepositoryFacadeTest extends TestCase
 
     private SalesChannelContext $context;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->factory = $this->getContainer()->get(SalesChannelRepositoryFacadeHookFactory::class);
         $this->context = $this->getContainer()->get(SalesChannelContextFactory::class)->create(Uuid::randomHex(), TestDefaults::SALES_CHANNEL);
@@ -50,6 +50,7 @@ class SalesChannelRepositoryFacadeTest extends TestCase
 
     /**
      * @param array<string, array<int, mixed>> $criteria
+     * @param callable(EntitySearchResult): void $expectation
      *
      * @dataProvider testCases
      */
@@ -63,7 +64,7 @@ class SalesChannelRepositoryFacadeTest extends TestCase
             new Script('test', '', new \DateTimeImmutable())
         );
 
-        $result = $facade->$method('product', $criteria);
+        $result = $facade->$method('product', $criteria); /* @phpstan-ignore-line */
 
         $expectation($result);
     }
@@ -339,7 +340,7 @@ class SalesChannelRepositoryFacadeTest extends TestCase
 
         $criteria = [
             'aggregations' => [
-                ['name' => 'sum', 'type' => 'sum', 'field' => 'price.gross'],
+                ['name' => 'sum', 'type' => 'sum', 'field' => 'autoIncrement'],
             ],
         ];
 

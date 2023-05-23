@@ -171,8 +171,6 @@ export default {
                 this.defaultCriteria,
             ).then((customer) => {
                 this.customer = customer;
-                this.customer.accountType = this.customer.company?.trim().length ?
-                    CUSTOMER.ACCOUNT_TYPE_BUSINESS : CUSTOMER.ACCOUNT_TYPE_PRIVATE;
                 this.isLoading = false;
             });
         },
@@ -180,6 +178,8 @@ export default {
         saveFinish() {
             this.isSaveSuccessful = false;
             this.editMode = false;
+            this.createdComponent();
+            this.isLoading = false;
         },
 
         validateEmail() {
@@ -261,9 +261,7 @@ export default {
             }
 
             return this.customerRepository.save(this.customer).then(() => {
-                this.isLoading = false;
                 this.isSaveSuccessful = true;
-                this.createdComponent();
                 this.createNotificationSuccess({
                     message: this.$tc('sw-customer.detail.messageSaveSuccess', 0, {
                         name: `${this.customer.firstName} ${this.customer.lastName}`,

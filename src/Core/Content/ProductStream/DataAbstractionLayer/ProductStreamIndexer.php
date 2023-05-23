@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Content\ProductStream\DataAbstractionLayer;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Content\Product\ProductDefinition;
 use Shopware\Core\Content\ProductStream\Event\ProductStreamIndexerEvent;
@@ -44,6 +45,9 @@ class ProductStreamIndexer extends EntityIndexer
         return 'product_stream.indexer';
     }
 
+    /**
+     * @param array<string, mixed>|null $offset
+     */
     public function iterate(?array $offset): ?EntityIndexingMessage
     {
         $iterator = $this->iteratorFactory->createIterator($this->repository->getDefinition(), $offset);
@@ -85,7 +89,7 @@ class ProductStreamIndexer extends EntityIndexer
              WHERE product_stream_id IN (:ids)
              ORDER BY product_stream_id',
             ['ids' => Uuid::fromHexToBytesList($ids)],
-            ['ids' => Connection::PARAM_STR_ARRAY]
+            ['ids' => ArrayParameterType::STRING]
         );
 
         $filters = FetchModeHelper::group($filters);
@@ -127,6 +131,9 @@ class ProductStreamIndexer extends EntityIndexer
         throw new DecorationPatternException(static::class);
     }
 
+    /**
+     * @param array<string, array<string, mixed>> $filter
+     */
     private function buildPayload(array $filter): string
     {
         usort($filter, static fn (array $a, array $b) => $a['position'] <=> $b['position']);
@@ -148,6 +155,11 @@ class ProductStreamIndexer extends EntityIndexer
         return $this->serializer->serialize($streamFilter, 'json');
     }
 
+    /**
+     * @param array<string, array<string, mixed>> $entities
+     *
+     * @return array<int, array<string, mixed>>
+     */
     private function buildNested(array $entities, ?string $parentId): array
     {
         $nested = [];
@@ -214,6 +226,11 @@ class ProductStreamIndexer extends EntityIndexer
         return $field === 'id' || $field === $this->productDefinition->getEntityName() . '.id';
     }
 
+    /**
+     * @param array<string, mixed> $originalQuery
+     *
+     * @return array<string, mixed>
+     */
     private function wrapIdFilter(array $originalQuery): array
     {
         return [

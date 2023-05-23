@@ -8,6 +8,9 @@ use Shopware\Core\Framework\DataAbstractionLayer\Doctrine\RetryableQuery;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 
+/**
+ * @deprecated tag:v6.6.0 - reason:becomes-internal - Type hint to AbstractIncrementer, implementations are internal and should not be used for type hints
+ */
 #[Package('core')]
 class MySQLIncrementer extends AbstractIncrementer
 {
@@ -74,7 +77,7 @@ class MySQLIncrementer extends AbstractIncrementer
         }
 
         RetryableQuery::retryable($this->connection, function () use ($query): void {
-            $query->execute();
+            $query->executeStatement();
         });
     }
 

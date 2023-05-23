@@ -127,13 +127,29 @@ class Feature
         }
     }
 
+    public static function silent(string $flagName, \Closure $closure): mixed
+    {
+        $before = isset(self::$silent[$flagName]);
+        self::$silent[$flagName] = true;
+
+        try {
+            $result = $closure();
+        } finally {
+            if (!$before) {
+                unset(self::$silent[$flagName]);
+            }
+        }
+
+        return $result;
+    }
+
     public static function skipTestIfInActive(string $flagName, TestCase $test): void
     {
         if (self::isActive($flagName)) {
             return;
         }
 
-        $test::markTestSkipped('Skipping feature test for flag  "' . $flagName . '"');
+        $test->markTestSkipped('Skipping feature test for flag  "' . $flagName . '"');
     }
 
     public static function skipTestIfActive(string $flagName, TestCase $test): void
@@ -142,7 +158,7 @@ class Feature
             return;
         }
 
-        $test::markTestSkipped('Skipping feature test for flag  "' . $flagName . '"');
+        $test->markTestSkipped('Skipping feature test for flag  "' . $flagName . '"');
     }
 
     public static function throwException(string $flag, string $message, bool $state = true): void

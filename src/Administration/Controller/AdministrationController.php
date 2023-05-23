@@ -6,13 +6,13 @@ use Doctrine\DBAL\Connection;
 use Shopware\Administration\Events\PreResetExcludedSearchTermEvent;
 use Shopware\Administration\Framework\Routing\KnownIps\KnownIpsCollectorInterface;
 use Shopware\Administration\Snippet\SnippetFinderInterface;
+use Shopware\Core\Checkout\Customer\CustomerEntity;
 use Shopware\Core\Defaults;
 use Shopware\Core\DevOps\Environment\EnvironmentHelper;
 use Shopware\Core\Framework\Adapter\Twig\TemplateFinder;
 use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\DefinitionInstanceRegistry;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Exception\InconsistentCriteriaIdsException;
 use Shopware\Core\Framework\DataAbstractionLayer\Field\Flag\AllowHtml;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
@@ -28,6 +28,7 @@ use Shopware\Core\Framework\Uuid\Uuid;
 use Shopware\Core\Framework\Validation\Exception\ConstraintViolationException;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\Currency\CurrencyEntity;
+use Shopware\Core\System\SystemConfig\SystemConfigService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\DependencyInjection\ParameterBag\ParameterBagInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -44,6 +45,8 @@ use function version_compare;
 class AdministrationController extends AbstractController
 {
     private readonly bool $esAdministrationEnabled;
+
+    private readonly bool $esStorefrontEnabled;
 
     /**
      * @internal
@@ -63,11 +66,15 @@ class AdministrationController extends AbstractController
         private readonly EntityRepository $currencyRepository,
         private readonly HtmlSanitizer $htmlSanitizer,
         private readonly DefinitionInstanceRegistry $definitionInstanceRegistry,
-        ParameterBagInterface $params
+        ParameterBagInterface $params,
+        private readonly SystemConfigService $systemConfigService
     ) {
         // param is only available if the elasticsearch bundle is enabled
         $this->esAdministrationEnabled = $params->has('elasticsearch.administration.enabled')
             ? $params->get('elasticsearch.administration.enabled')
+            : false;
+        $this->esStorefrontEnabled = $params->has('elasticsearch.enabled')
+            ? $params->get('elasticsearch.enabled')
             : false;
     }
 
@@ -91,6 +98,7 @@ class AdministrationController extends AbstractController
             'apiVersion' => $this->getLatestApiVersion(),
             'cspNonce' => $request->attributes->get(PlatformRequest::ATTRIBUTE_CSP_NONCE),
             'adminEsEnable' => $this->esAdministrationEnabled,
+            'storefrontEsEnable' => $this->esStorefrontEnabled,
         ]);
     }
 
@@ -172,13 +180,17 @@ class AdministrationController extends AbstractController
         }
 
         $email = (string) $request->request->get('email');
-        $boundSalesChannelId = $request->request->get('bound_sales_channel_id');
-
-        if ($boundSalesChannelId !== null && !\is_string($boundSalesChannelId)) {
-            throw new InvalidRequestParameterException('bound_sales_channel_id');
+        $isCustomerBoundSalesChannel = $this->systemConfigService->get('core.systemWideLoginRegistration.isCustomerBoundToSalesChannel');
+        $boundSalesChannelId = null;
+        if ($isCustomerBoundSalesChannel) {
+            $boundSalesChannelId = $request->request->get('boundSalesChannelId');
+            if ($boundSalesChannelId !== null && !\is_string($boundSalesChannelId)) {
+                throw new InvalidRequestParameterException('boundSalesChannelId');
+            }
         }
 
-        if ($this->isEmailValid((string) $request->request->get('id'), $email, $context, $boundSalesChannelId)) {
+        $customer = $this->getCustomerByEmail((string) $request->request->get('id'), $email, $context, $boundSalesChannelId);
+        if (!$customer) {
             return new JsonResponse(
                 ['isValid' => true]
             );
@@ -187,9 +199,9 @@ class AdministrationController extends AbstractController
         $message = 'The email address {{ email }} is already in use';
         $params['{{ email }}'] = $email;
 
-        if ($boundSalesChannelId !== null) {
-            $message .= ' in the sales channel {{ salesChannelId }}';
-            $params['{{ salesChannelId }}'] = $boundSalesChannelId;
+        if ($customer->getBoundSalesChannel()) {
+            $message .= ' in the Sales Channel {{ salesChannel }}';
+            $params['{{ salesChannel }}'] = $customer->getBoundSalesChannel()->getName();
         }
 
         $violations = new ConstraintViolationList();
@@ -271,12 +283,14 @@ class AdministrationController extends AbstractController
         return array_pop($sortedSupportedApiVersions);
     }
 
-    /**
-     * @throws InconsistentCriteriaIdsException
-     */
-    private function isEmailValid(string $customerId, string $email, Context $context, ?string $boundSalesChannelId): bool
+    private function getCustomerByEmail(string $customerId, string $email, Context $context, ?string $boundSalesChannelId): ?CustomerEntity
     {
         $criteria = new Criteria();
+        $criteria->setLimit(1);
+        if ($boundSalesChannelId) {
+            $criteria->addAssociation('boundSalesChannel');
+        }
+
         $criteria->addFilter(new EqualsFilter('email', $email));
         $criteria->addFilter(new EqualsFilter('guest', false));
         $criteria->addFilter(new NotFilter(
@@ -289,6 +303,9 @@ class AdministrationController extends AbstractController
             new EqualsFilter('boundSalesChannelId', $boundSalesChannelId),
         ]));
 
-        return $this->customerRepo->searchIds($criteria, $context)->getTotal() === 0;
+        /** @var ?CustomerEntity $customer */
+        $customer = $this->customerRepo->search($criteria, $context)->first();
+
+        return $customer;
     }
 }

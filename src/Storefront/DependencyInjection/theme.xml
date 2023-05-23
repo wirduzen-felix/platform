@@ -34,6 +34,7 @@
             <argument type="service" id="Shopware\Storefront\Theme\ScssPhpCompiler"/>
             <argument type="service" id="messenger.bus.shopware"/>
             <argument>%storefront.theme.file_delete_delay%</argument>
+            <argument>%storefront.theme.auto_prefix_css%</argument>
         </service>
 
         <service id="Shopware\Storefront\Theme\ThemeFileImporter">
@@ -294,6 +295,13 @@
             <argument type="service" id="Shopware\Storefront\Theme\ThemeService"/>
             <argument type="service" id="Shopware\Storefront\Theme\ThemeLifecycleService"/>
             <argument type="service" id="sales_channel.repository" />
+
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="Shopware\Storefront\Theme\Subscriber\UnusedMediaSubscriber">
+            <argument type="service" id="theme.repository"/>
+            <argument type="service" id="Shopware\Storefront\Theme\ThemeService"/>
 
             <tag name="kernel.event_subscriber"/>
         </service>

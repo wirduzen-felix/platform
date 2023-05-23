@@ -36,7 +36,7 @@ class RuleTest extends TestCase
 
     private Context $context;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->conditionRepository = $this->getContainer()->get('rule_condition.repository');
         $this->conditionRegistry = $this->getContainer()->get(RuleConditionRegistry::class);
@@ -161,7 +161,7 @@ class RuleTest extends TestCase
     {
         /** @var Rule $rule */
         foreach ($this->getRules() as $rule) {
-            $ruleNameConstant = $rule::RULE_NAME;
+            $ruleNameConstant = $rule::RULE_NAME; /* @phpstan-ignore-line */
 
             static::assertNotNull($ruleNameConstant, sprintf(
                 'Rule name constant is empty in condition %s',

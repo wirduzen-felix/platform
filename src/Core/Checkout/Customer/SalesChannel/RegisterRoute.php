@@ -55,7 +55,7 @@ use Symfony\Component\Validator\Constraints\Type;
 use Symfony\Contracts\EventDispatcher\Event;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
-#[Route(defaults: ['_routeScope' => ['store-api'], '_contextTokenRequired' => true])]
+#[Route(defaults: ['_routeScope' => ['store-api']])]
 #[Package('customer-order')]
 class RegisterRoute extends AbstractRegisterRoute
 {
@@ -87,6 +87,10 @@ class RegisterRoute extends AbstractRegisterRoute
     public function register(RequestDataBag $data, SalesChannelContext $context, bool $validateStorefrontUrl = true, ?DataValidationDefinition $additionalValidationDefinitions = null): CustomerResponse
     {
         $isGuest = $data->getBoolean('guest');
+
+        $accountType = $data->get('accountType') ?: null;
+        $data->set('accountType', $accountType);
+
         $this->validateRegistrationData($data, $isGuest, $context, $additionalValidationDefinitions, $validateStorefrontUrl);
 
         $customer = $this->mapCustomerData($data, $isGuest, $context);
@@ -116,15 +120,18 @@ class RegisterRoute extends AbstractRegisterRoute
             $customer['addresses'][] = $shippingAddress;
         }
 
-        if ($data->get('accountType') === CustomerEntity::ACCOUNT_TYPE_BUSINESS && !empty($billingAddress['company'])) {
-            $customer['company'] = $billingAddress['company'];
+        if ($accountType) {
+            $customer['accountType'] = $accountType;
+        }
 
+        if ($accountType === CustomerEntity::ACCOUNT_TYPE_BUSINESS && !empty($billingAddress['company'])) {
+            $customer['company'] = $billingAddress['company'];
             if ($data->get('vatIds')) {
                 $customer['vatIds'] = $data->get('vatIds');
             }
         }
 
-        $customer = $this->setDoubleOptInData($customer, $context);
+        $customer = $this->addDoubleOptInData($customer, $context);
 
         $customer['boundSalesChannelId'] = $this->getBoundSalesChannelId($customer['email'], $context);
 
@@ -225,7 +232,7 @@ class RegisterRoute extends AbstractRegisterRoute
      *
      * @return array<string, mixed>
      */
-    private function setDoubleOptInData(array $customer, SalesChannelContext $context): array
+    private function addDoubleOptInData(array $customer, SalesChannelContext $context): array
     {
         $configKey = $customer['guest']
             ? 'core.loginRegistration.doubleOptInGuestOrder'
@@ -326,9 +333,12 @@ class RegisterRoute extends AbstractRegisterRoute
         if (!$birthdayDay || !$birthdayMonth || !$birthdayYear) {
             return null;
         }
+        \assert(\is_numeric($birthdayDay));
+        \assert(\is_numeric($birthdayMonth));
+        \assert(\is_numeric($birthdayYear));
 
         return new \DateTime(sprintf(
-            '%s-%s-%s',
+            '%d-%d-%d',
             $birthdayYear,
             $birthdayMonth,
             $birthdayDay
@@ -404,7 +414,7 @@ class RegisterRoute extends AbstractRegisterRoute
         return $customer;
     }
 
-    private function getCreateAddressValidationDefinition(DataBag $data, string $accountType, bool $isBillingAddress, SalesChannelContext $context): DataValidationDefinition
+    private function getCreateAddressValidationDefinition(DataBag $data, ?string $accountType, bool $isBillingAddress, SalesChannelContext $context): DataValidationDefinition
     {
         $validation = $this->addressValidationFactory->create($context);
 
@@ -506,7 +516,7 @@ class RegisterRoute extends AbstractRegisterRoute
             ->select('LOWER(HEX(bound_sales_channel_id)) as bound_sales_channel_id')
             ->from('customer')
             ->where($query->expr()->eq('email', $query->createPositionalParameter($email)))
-            ->execute()
+            ->executeQuery()
             ->fetchAllAssociative();
 
         foreach ($results as $result) {

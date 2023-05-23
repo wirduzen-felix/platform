@@ -1,4 +1,7 @@
-import * as marked from "npm:marked";
+import { marked } from "npm:marked";
+import { baseUrl } from "npm:marked-base-url";
+
+marked.use(baseUrl('https://github.com/shopware/platform/blob/trunk/changelog'));
 
 marked.setOptions({
     gfm: true,
@@ -25,7 +28,7 @@ async function generateVersionInfo() {
     const vulnerabilities = await fetchVulnerabilities();
 
     for (const release of json) {
-        if (json.prerelease || json.draft) {
+        if (json.draft) {
             continue;
         }
 
@@ -50,7 +53,7 @@ async function generateVersionListing() {
         const releases = await(await fetchGithub("https://api.github.com/repos/shopware/platform/releases?per_page=100&page=" + currentPage)).json();
 
         for (const release of releases) {
-            if (release.prerelease || release.draft) {
+            if (release.draft) {
                 continue;
             }
 

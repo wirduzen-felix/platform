@@ -38,7 +38,7 @@ class CustomFieldProtectionSubscriberTest extends TestCase
      */
     private $appRepo;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->customFieldSetRepo = $this->getContainer()->get('custom_field_set.repository');
         $this->appRepo = $this->getContainer()->get('app.repository');
@@ -168,6 +168,8 @@ class CustomFieldProtectionSubscriberTest extends TestCase
             );
         }
 
-        $browser->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $data['access_token']));
+        $accessToken = $data['access_token'];
+        static::assertIsString($accessToken);
+        $browser->setServerParameter('HTTP_Authorization', sprintf('Bearer %s', $accessToken));
     }
 }

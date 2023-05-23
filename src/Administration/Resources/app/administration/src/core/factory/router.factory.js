@@ -12,7 +12,6 @@
  * @param {ViewFactory} View
  * @param {ModuleFactory} moduleFactory
  * @param {LoginService} LoginService
- * @returns {{}}
  */
 // eslint-disable-next-line sw-deprecation-rules/private-feature-declarations
 export default function createRouter(Router, View, moduleFactory, LoginService) {
@@ -90,7 +89,7 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
             const loggedIn = LoginService.isLoggedIn();
             const tokenHandler = new Shopware.Helper.RefreshTokenHelper();
             const loginAllowlist = [
-                '/login', '/login/info', '/login/recovery', '/inactivity/login',
+                '/login', '/login/info', '/login/recovery',
             ];
 
             if (to.meta && to.meta.forceRoute === true) {
@@ -100,7 +99,8 @@ export default function createRouter(Router, View, moduleFactory, LoginService) 
             // The login route will be called and the user is not logged in, let him see the login.
             if (!loggedIn && (to.name === 'login' ||
                 loginAllowlist.includes(to.path) ||
-                to.path.startsWith('/login/user-recovery/'))
+                to.path.startsWith('/login/user-recovery/') ||
+                to.path.match(/\/inactivity\/login\/[a-z0-9]{32}/))
             ) {
                 return next();
             }

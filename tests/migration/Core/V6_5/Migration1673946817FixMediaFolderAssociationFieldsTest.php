@@ -4,6 +4,7 @@ namespace Shopware\Tests\Migration\Core\V6_5;
 
 use Doctrine\DBAL\Connection;
 use PHPUnit\Framework\TestCase;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\Migration\V6_5\Migration1673946817FixMediaFolderAssociationFields;
 
@@ -18,8 +19,12 @@ class Migration1673946817FixMediaFolderAssociationFieldsTest extends TestCase
 {
     private Connection $connection;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
+        if (Feature::isActive('v6.6.0.0')) {
+            static::markTestSkipped('This test is not compatible with v6.6.0.0. Re-enable when migration refactoring is complete or remove the unit test with next major.');
+        }
+
         $this->connection = KernelLifecycleManager::getConnection();
     }
 

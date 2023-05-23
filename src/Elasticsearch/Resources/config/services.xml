@@ -31,6 +31,7 @@
     <services>
         <service id="Shopware\Elasticsearch\Framework\DataAbstractionLayer\CriteriaParser">
             <argument type="service" id="Shopware\Core\Framework\DataAbstractionLayer\Dbal\EntityDefinitionQueryHelper"/>
+            <argument type="service" id="Shopware\Core\System\CustomField\CustomFieldService"/>
         </service>
 
         <service id="Shopware\Elasticsearch\Framework\ElasticsearchHelper" public="true">
@@ -72,7 +73,7 @@
             <argument type="service" id="Shopware\Elasticsearch\Framework\Indexing\ElasticsearchIndexer"/>
             <argument type="service" id="messenger.bus.shopware"/>
             <argument type="service" id="Shopware\Elasticsearch\Framework\Indexing\CreateAliasTaskHandler"/>
-
+            <argument>%elasticsearch.indexing_enabled%</argument>
             <tag name="console.command"/>
         </service>
 

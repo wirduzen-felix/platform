@@ -18,6 +18,7 @@ use Shopware\Core\Framework\Plugin\PluginService;
 use Shopware\Core\Framework\Plugin\Requirement\RequirementsValidator;
 use Shopware\Core\Framework\Plugin\Util\AssetService;
 use Shopware\Core\Framework\Plugin\Util\PluginFinder;
+use Shopware\Core\Framework\Plugin\Util\VersionSanitizer;
 use Shopware\Core\Framework\Test\Migration\MigrationTestBehaviour;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelLifecycleManager;
 use Shopware\Core\Framework\Test\TestCaseBase\KernelTestBehaviour;
@@ -63,8 +64,8 @@ class PluginLifecycleServiceMigrationTest extends TestCase
     {
         $connection = Kernel::getConnection();
 
-        $connection->executeUpdate('DELETE FROM migration WHERE `class` LIKE "SwagManualMigrationTest%"');
-        $connection->executeUpdate('DELETE FROM plugin');
+        $connection->executeStatement('DELETE FROM migration WHERE `class` LIKE "SwagManualMigrationTest%"');
+        $connection->executeStatement('DELETE FROM plugin');
 
         KernelLifecycleManager::bootKernel();
     }
@@ -95,7 +96,7 @@ class PluginLifecycleServiceMigrationTest extends TestCase
         $this->requireMigrationFiles();
 
         $this->pluginService->refreshPlugins($this->context, new NullIO());
-        $this->connection->executeUpdate('DELETE FROM plugin WHERE `name` = "SwagTest"');
+        $this->connection->executeStatement('DELETE FROM plugin WHERE `name` = "SwagTest"');
     }
 
     public function testInstall(): MigrationCollection
@@ -191,6 +192,8 @@ class PluginLifecycleServiceMigrationTest extends TestCase
             $this->container->get(CustomEntityPersister::class),
             $this->container->get(CustomEntitySchemaUpdater::class),
             $this->container->get(CustomEntityLifecycleService::class),
+            $this->container->get(PluginService::class),
+            $this->container->get(VersionSanitizer::class),
         );
     }
 

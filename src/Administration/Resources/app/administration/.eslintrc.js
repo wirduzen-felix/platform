@@ -28,6 +28,7 @@ const baseRules = {
     }],
     'sw-deprecation-rules/private-feature-declarations': 'error',
     'no-restricted-exports': 'off',
+    'filename-rules/match': [2, /^(?!.*\.spec\.ts$).*(?:\.js|\.ts|\.html|\.html\.twig)$/],
 };
 
 module.exports = {
@@ -58,6 +59,7 @@ module.exports = {
         'sw-core-rules',
         'sw-deprecation-rules',
         'sw-test-rules',
+        'filename-rules',
     ],
 
     settings: {
@@ -179,22 +181,23 @@ module.exports = {
                 'vue/no-lone-template': 'error',
             },
         }, {
-            files: ['**/*.spec.js', '**/*.spec.ts', '**/fixtures/*.js', 'test/**/*.js', 'test/**/*.ts'],
+            files: ['**/*.spec.js', '**/fixtures/*.js', 'test/**/*.js', 'test/**/*.ts'],
             rules: {
                 'sw-test-rules/await-async-functions': 'error',
-                'no-console': 0,
-                'comma-dangle': 0,
                 'max-len': 0,
-                'inclusive-language/use-inclusive-words': 0,
                 'sw-deprecation-rules/private-feature-declarations': 0,
+                'jest/expect-expect': 'error',
+                'jest/no-duplicate-hooks': 'error',
+                'jest/no-test-return-statement': 'error',
+                'jest/prefer-hooks-in-order': 'error',
+                'jest/prefer-hooks-on-top': 'error',
+                'jest/prefer-to-be': 'error',
+                'jest/require-top-level-describe': 'error',
+                'jest/prefer-to-contain': 'error',
+                'jest/prefer-to-have-length': 'error',
+                'jest/consistent-test-it': ['error', { fn: 'it', withinDescribe: 'it' }],
             },
-        }, {
-            files: ['**/*.spec.ts'],
-            rules: {
-                // Disable the base rule as it can report incorrect errors
-                'no-unused-vars': 'off',
-                '@typescript-eslint/no-unused-vars': 'error',
-            },
+            extends: ['plugin:jest/recommended'],
         }, {
             files: ['**/snippet/*.json'],
             rules: {
@@ -202,7 +205,6 @@ module.exports = {
             },
         }, {
             files: ['**/*.ts', '**/*.tsx'],
-            excludedFiles: '*.spec.ts',
             extends: [
                 '@shopware-ag/eslint-config-base',
                 'plugin:@typescript-eslint/eslint-recommended',

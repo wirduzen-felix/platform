@@ -8,6 +8,7 @@ use Shopware\Core\Framework\Context;
 use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\DataAbstractionLayer\Search\Filter\EqualsFilter;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\Framework\Log\Package;
 use Shopware\Core\Framework\Plugin\Exception\DecorationPatternException;
 use Shopware\Core\PlatformRequest;
@@ -174,9 +175,6 @@ class Translator extends AbstractTranslator
         return $this->translator->getLocale();
     }
 
-    /**
-     * @param string $cacheDir
-     */
     public function warmUp($cacheDir): void
     {
         if ($this->translator instanceof WarmableInterface) {
@@ -184,7 +182,19 @@ class Translator extends AbstractTranslator
         }
     }
 
+    /**
+     * @deprecated tag:v6.6.0 - Will be removed, use `reset` instead
+     */
     public function resetInMemoryCache(): void
+    {
+        Feature::triggerDeprecationOrThrow(
+            'v6.6.0.0',
+            Feature::deprecatedMethodMessage(self::class, __METHOD__, 'v6.6.0.0', 'Use reset() instead')
+        );
+        $this->reset();
+    }
+
+    public function reset(): void
     {
         $this->isCustomized = [];
         $this->snippetSetId = null;
@@ -311,15 +321,15 @@ class Translator extends AbstractTranslator
      */
     private function loadSnippets(MessageCatalogueInterface $catalog, string $snippetSetId, ?string $fallbackLocale): array
     {
-        $salesChannelId = $this->resolveSalesChannelId() ?? 'DEFAULT';
+        $this->resolveSalesChannelId();
 
-        $key = sprintf('translation.catalog.%s.%s', $salesChannelId, $snippetSetId);
+        $key = sprintf('translation.catalog.%s.%s', $this->salesChannelId ?: 'DEFAULT', $snippetSetId);
 
-        return $this->cache->get($key, function (ItemInterface $item) use ($catalog, $snippetSetId, $salesChannelId, $fallbackLocale) {
+        return $this->cache->get($key, function (ItemInterface $item) use ($catalog, $snippetSetId, $fallbackLocale) {
             $item->tag('translation.catalog.' . $snippetSetId);
-            $item->tag('translation.catalog.' . $salesChannelId);
+            $item->tag(sprintf('translation.catalog.%s', $this->salesChannelId ?: 'DEFAULT'));
 
-            return $this->snippetService->getStorefrontSnippets($catalog, $snippetSetId, $fallbackLocale);
+            return $this->snippetService->getStorefrontSnippets($catalog, $snippetSetId, $fallbackLocale, $this->salesChannelId);
         });
     }
 
@@ -333,23 +343,18 @@ class Translator extends AbstractTranslator
         }
     }
 
-    private function resolveSalesChannelId(): ?string
+    private function resolveSalesChannelId(): void
     {
-        $salesChannelId = $this->salesChannelId;
-
-        if ($salesChannelId !== null) {
-            return $salesChannelId;
+        if ($this->salesChannelId !== null) {
+            return;
         }
 
         $request = $this->requestStack->getCurrentRequest();
 
         if (!$request) {
-            return null;
+            return;
         }
 
-        /** @var string|null $salesChannelId */
-        $salesChannelId = $request->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
-
-        return $salesChannelId;
+        $this->salesChannelId = $request->attributes->get(PlatformRequest::ATTRIBUTE_SALES_CHANNEL_ID);
     }
 }

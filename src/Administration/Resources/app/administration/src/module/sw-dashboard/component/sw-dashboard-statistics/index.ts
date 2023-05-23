@@ -203,7 +203,7 @@ export default Shopware.Component.wrapComponentConfig({
             }
 
             // format data for chart
-            const seriesData = this.historyOrderDataSum.buckets.map((data) => {
+            const seriesData = this.historyOrderDataSum.buckets.map((data: BucketData) => {
                 return { x: this.parseDate(data.key), y: data.totalAmount.sum };
             });
 
@@ -430,12 +430,15 @@ export default Shopware.Component.wrapComponentConfig({
         },
 
         getVariantFromOrderState(order: OrderEntity): string {
-            /* eslint-disable */
+            const state = order.stateMachineState?.technicalName;
+            if (!state) {
+                return '';
+            }
+
             return this.stateStyleDataProviderService.getStyle(
                 'order.state',
-                order.stateMachineState?.technicalName,
+                state,
             ).variant;
-            /* eslint-enable */
         },
 
         parseDate(date: string): number {

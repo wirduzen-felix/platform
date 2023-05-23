@@ -73,7 +73,7 @@
 
                         {% block page_checkout_confirm_revocation_control %}
                             {% if page.showRevocation() %}
-                                <div class="{{ formCheckboxWrapperClass }}">
+                                <div class="form-check">
                                     {% block page_checkout_confirm_revocation_control_checkbox %}
                                         <input type="checkbox"
                                                class="checkout-confirm-revocation-checkbox form-check-input{% if formViolations.getViolations('/revocation') is not empty %} is-invalid{% endif %}"
@@ -204,10 +204,12 @@
     }]
 } %}
 
+{% set confirmOrderFormAction = path('frontend.checkout.finish.order') %}
+
 {% block page_checkout_aside_actions %}
     <div class="checkout-aside-action">
         <form id="confirmOrderForm"
-              action="{{ path('frontend.checkout.finish.order') }}"
+              action="{{ confirmOrderFormAction }}"
               data-form-preserver="true"
               data-form-submit-loader="true"
               data-form-add-history="true"
@@ -218,7 +220,7 @@
                     <button id="confirmFormSubmit"
                             class="btn btn-primary btn-lg"
                             form="confirmOrderForm"
-                        {% if page.cart.errors.blockOrder %}
+                        {% if page.cart.errors.blockResubmit %}
                             disabled
                         {% endif %}
                             type="submit">

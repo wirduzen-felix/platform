@@ -24,7 +24,7 @@ class StoreApiGeneratorTest extends TestCase
 
     private StaticDefinitionInstanceRegistry $definitionRegistry;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->generator = new StoreApiGenerator(
             new OpenApiSchemaBuilder('0.1.0'),
@@ -48,7 +48,7 @@ class StoreApiGeneratorTest extends TestCase
         $schema = $this->generator->generate(
             $this->definitionRegistry->getDefinitions(),
             DefinitionService::API,
-            DefinitionService::TypeJsonApi
+            DefinitionService::TYPE_JSON_API
         );
         $paths = $schema['paths'];
 
@@ -60,7 +60,7 @@ class StoreApiGeneratorTest extends TestCase
         $schema = $this->generator->generate(
             $this->definitionRegistry->getDefinitions(),
             DefinitionService::API,
-            DefinitionService::TypeJsonApi
+            DefinitionService::TYPE_JSON_API
         );
         $entities = $schema['components']['schemas'];
         static::assertArrayHasKey('Simple', $entities);

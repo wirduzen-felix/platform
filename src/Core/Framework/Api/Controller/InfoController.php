@@ -54,7 +54,7 @@ class InfoController extends AbstractController
     #[Route(path: '/api/_info/openapi3.json', defaults: ['auth_required' => '%shopware.api.api_browser.auth_required_str%'], name: 'api.info.openapi3', methods: ['GET'])]
     public function info(Request $request): JsonResponse
     {
-        $apiType = $request->query->getAlpha('type', DefinitionService::TypeJsonApi);
+        $apiType = $request->query->getAlpha('type', DefinitionService::TYPE_JSON_API);
 
         $apiType = $this->definitionService->toApiType($apiType);
         if ($apiType === null) {
@@ -113,7 +113,7 @@ class InfoController extends AbstractController
     public function infoHtml(Request $request): Response
     {
         $nonce = $request->attributes->get(PlatformRequest::ATTRIBUTE_CSP_NONCE);
-        $apiType = $request->query->getAlpha('type', DefinitionService::TypeJson);
+        $apiType = $request->query->getAlpha('type', DefinitionService::TYPE_JSON);
         $response = $this->render(
             '@Framework/swagger.html.twig',
             [
@@ -142,6 +142,8 @@ class InfoController extends AbstractController
             'versionRevision' => $this->params->get('kernel.shopware_version_revision'),
             'adminWorker' => [
                 'enableAdminWorker' => $this->params->get('shopware.admin_worker.enable_admin_worker'),
+                'enableQueueStatsWorker' => $this->params->get('shopware.admin_worker.enable_queue_stats_worker'),
+                'enableNotificationWorker' => $this->params->get('shopware.admin_worker.enable_notification_worker'),
                 'transports' => $this->params->get('shopware.admin_worker.transports'),
             ],
             'bundles' => $this->getBundles($context),
@@ -244,7 +246,7 @@ class InfoController extends AbstractController
         $path = 'administration/css/' . str_replace('_', '-', (string) $bundle->getContainerPrefix()) . '.css';
         $bundlePath = $bundle->getPath();
 
-        if (!file_exists($bundlePath . '/Resources/public/' . $path)) {
+        if (!file_exists($bundlePath . '/Resources/public/' . $path) && !file_exists($bundlePath . '/Resources/.administration-css')) {
             return [];
         }
 
@@ -259,7 +261,7 @@ class InfoController extends AbstractController
         $path = 'administration/js/' . str_replace('_', '-', (string) $bundle->getContainerPrefix()) . '.js';
         $bundlePath = $bundle->getPath();
 
-        if (!file_exists($bundlePath . '/Resources/public/' . $path)) {
+        if (!file_exists($bundlePath . '/Resources/public/' . $path) && !file_exists($bundlePath . '/Resources/.administration-js')) {
             return [];
         }
 

@@ -68,7 +68,7 @@ class NewsletterSubscribeRoute extends AbstractNewsletterSubscribeRoute
     /**
      * The regex to check if string contains an url
      */
-    final public const DOMAIN_NAME_REGEX = '/((https?:\/\/))/';
+    final public const DOMAIN_NAME_REGEX = '/((https?:\/))/';
 
     /**
      * @internal
@@ -157,6 +157,9 @@ class NewsletterSubscribeRoute extends AbstractNewsletterSubscribeRoute
         return new NoContentResponse();
     }
 
+    /**
+     * @deprecated tag:v6.6.0 - reason:visibility-change - will be private in v6.6.0
+     */
     public function isNewsletterDoi(SalesChannelContext $context): ?bool
     {
         if ($context->getCustomerId() === null) {

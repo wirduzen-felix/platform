@@ -224,6 +224,9 @@ class RecalculationServiceTest extends TestCase
             }
         }
 
+        $this->resetPayloadProtection($cart);
+        $this->resetPayloadProtection($convertedCart);
+
         static::assertEquals($cart, $convertedCart);
     }
 
@@ -911,6 +914,7 @@ class RecalculationServiceTest extends TestCase
         static::assertNotNull($order);
         static::assertNotNull($order->getAddresses());
         $orderAddressId = $order->getAddresses()->first()->getId();
+        static::assertIsString($orderAddressId);
 
         $firstName = 'Replace first name';
         $lastName = 'Replace last name';
@@ -993,6 +997,25 @@ class RecalculationServiceTest extends TestCase
         );
 
         return $countryId;
+    }
+
+    private function resetPayloadProtection(Cart $cart): void
+    {
+        // remove delivery information from line items
+        $payloadProtection = ReflectionHelper::getProperty(LineItem::class, 'payloadProtection');
+
+        foreach ($cart->getLineItems()->getFlat() as $lineItem) {
+            $payloadProtection->setValue($lineItem, []);
+        }
+
+        foreach ($cart->getDeliveries() as $delivery) {
+            foreach ($delivery->getPositions() as $position) {
+                $payloadProtection->setValue($position->getLineItem(), []);
+                foreach ($position->getLineItem()->getChildren() as $lineItem) {
+                    $payloadProtection->setValue($lineItem, []);
+                }
+            }
+        }
     }
 
     private function resetDataTimestamps(LineItemCollection $items): void
@@ -1215,7 +1238,7 @@ class RecalculationServiceTest extends TestCase
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{orderId: string, total: float, orderDateTime: \DateTimeInterface}
      */
     private function persistCart(Cart $cart, ?string $languageId = null): array
     {

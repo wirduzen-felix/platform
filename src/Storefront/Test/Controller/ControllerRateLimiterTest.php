@@ -88,7 +88,7 @@ class ControllerRateLimiterTest extends TestCase
         KernelLifecycleManager::bootKernel(true, Uuid::randomHex());
     }
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->context = Context::createDefaultContext();
         $this->ids = new TestDataCollection();
@@ -260,7 +260,7 @@ class ControllerRateLimiterTest extends TestCase
             $this->getContainer()->get('promotion.repository'),
             $this->mockResetLimiter([
                 RateLimiter::GUEST_LOGIN => 1,
-            ], $this),
+            ]),
         );
 
         $order = $this->createCustomerWithOrder();

@@ -20,6 +20,7 @@ use Shopware\Core\Framework\Test\Script\Execution\TestHook;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
 use Shopware\Core\System\Tax\TaxEntity;
 use Shopware\Tests\Integration\Core\Framework\App\AppSystemTestBehaviour;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * @internal
@@ -35,7 +36,7 @@ class RepositoryWriterFacadeTest extends TestCase
 
     private Context $context;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->factory = $this->getContainer()->get(RepositoryWriterFacadeHookFactory::class);
         $this->context = Context::createDefaultContext();
@@ -43,6 +44,7 @@ class RepositoryWriterFacadeTest extends TestCase
 
     /**
      * @param array<int, mixed> $payload
+     * @param callable(Context, ContainerInterface): void  $expectation
      *
      * @dataProvider testCases
      */
@@ -56,15 +58,15 @@ class RepositoryWriterFacadeTest extends TestCase
             new Script('test', '', new \DateTimeImmutable())
         );
 
-        $facade->$method('product', $payload);
+        $facade->$method('product', $payload); /* @phpstan-ignore-line */
 
-        $expectation($this->context);
+        $expectation($this->context, $this->getContainer());
     }
 
     /**
      * @return array<string, array<int, mixed>>
      */
-    public function testCases(): array
+    public static function testCases(): array
     {
         $ids = new IdsCollection();
 
@@ -78,8 +80,8 @@ class RepositoryWriterFacadeTest extends TestCase
                 ],
                 'upsert',
                 $ids,
-                function ($context) use ($ids): void {
-                    $productRepository = $this->getContainer()->get('product.repository');
+                function (Context $context, ContainerInterface $container) use ($ids): void {
+                    $productRepository = $container->get('product.repository');
 
                     $createdProduct = $productRepository->search(new Criteria([$ids->get('p4')]), $context)->first();
 
@@ -95,8 +97,8 @@ class RepositoryWriterFacadeTest extends TestCase
                 ],
                 'upsert',
                 $ids,
-                function ($context) use ($ids): void {
-                    $productRepository = $this->getContainer()->get('product.repository');
+                function (Context $context, ContainerInterface $container) use ($ids): void {
+                    $productRepository = $container->get('product.repository');
 
                     $updated = $productRepository->search(new Criteria([$ids->get('p2')]), $context)->first();
 
@@ -110,8 +112,8 @@ class RepositoryWriterFacadeTest extends TestCase
                 ],
                 'delete',
                 $ids,
-                function ($context) use ($ids): void {
-                    $productRepository = $this->getContainer()->get('product.repository');
+                function (Context $context, ContainerInterface $container) use ($ids): void {
+                    $productRepository = $container->get('product.repository');
 
                     $deleted = $productRepository->search(new Criteria([$ids->get('p2')]), $context)->first();
 
@@ -186,7 +188,7 @@ class RepositoryWriterFacadeTest extends TestCase
         );
 
         static::expectException(MissingPrivilegeException::class);
-        $facade->$method(...$arguments);
+        $facade->$method(...$arguments); /* @phpstan-ignore-line */
     }
 
     /**

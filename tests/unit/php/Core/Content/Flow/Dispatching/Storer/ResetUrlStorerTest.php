@@ -8,6 +8,7 @@ use Shopware\Core\Content\Flow\Dispatching\Aware\ResetUrlAware;
 use Shopware\Core\Content\Flow\Dispatching\StorableFlow;
 use Shopware\Core\Content\Flow\Dispatching\Storer\ResetUrlStorer;
 use Shopware\Core\Content\Test\Flow\TestFlowBusinessEvent;
+use Shopware\Core\Framework\Feature;
 use Shopware\Core\System\User\Recovery\UserRecoveryRequestEvent;
 
 /**
@@ -21,8 +22,9 @@ class ResetUrlStorerTest extends TestCase
 {
     private ResetUrlStorer $storer;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
+        Feature::skipTestIfActive('v6.6.0.0', $this);
         $this->storer = new ResetUrlStorer();
     }
 

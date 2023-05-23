@@ -48,7 +48,7 @@ class ThemeLifecycleHandlerTest extends TestCase
 
     private StorefrontPluginConfigurationFactory $configFactory;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->themeServiceMock = $this->createMock(ThemeService::class);
 
@@ -64,7 +64,7 @@ class ThemeLifecycleHandlerTest extends TestCase
 
         $this->configFactory = $this->getContainer()->get(StorefrontPluginConfigurationFactory::class);
 
-        $this->getContainer()->get(Connection::class)->executeUpdate('DELETE FROM `theme_sales_channel`');
+        $this->getContainer()->get(Connection::class)->executeStatement('DELETE FROM `theme_sales_channel`');
         $this->assignThemeToDefaultSalesChannel();
     }
 

@@ -70,7 +70,7 @@ class RateLimiterTest extends TestCase
         KernelLifecycleManager::bootKernel(true, Uuid::randomHex());
     }
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->context = Context::createDefaultContext();
         $this->ids = new TestDataCollection();
@@ -85,7 +85,7 @@ class RateLimiterTest extends TestCase
         $this->clearCache();
     }
 
-    public function tearDown(): void
+    protected function tearDown(): void
     {
         DisableRateLimiterCompilerPass::enableNoLimit();
     }
@@ -132,7 +132,7 @@ class RateLimiterTest extends TestCase
             $this->getContainer()->get('request_stack'),
             $this->mockResetLimiter([
                 RateLimiter::LOGIN_ROUTE => 1,
-            ], $this)
+            ])
         );
 
         $this->createCustomer('shopware', 'loginTest@example.com');
@@ -192,7 +192,7 @@ class RateLimiterTest extends TestCase
             $psrFactory,
             $this->mockResetLimiter([
                 RateLimiter::OAUTH => 1,
-            ], $this)
+            ])
         );
 
         $controller->token(new Request());
@@ -269,7 +269,7 @@ class RateLimiterTest extends TestCase
             $this->mockResetLimiter([
                 RateLimiter::OAUTH => 1,
                 RateLimiter::USER_RECOVERY => 1,
-            ], $this),
+            ]),
         );
 
         $controller->updateUserPassword(new Request(), $this->context);

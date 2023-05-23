@@ -31,7 +31,7 @@ class AssetInstallCommand extends Command
         parent::__construct();
     }
 
-    public function execute(InputInterface $input, OutputInterface $output): int
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new ShopwareStyle($input, $output);
 
@@ -47,9 +47,6 @@ class AssetInstallCommand extends Command
 
         $io->writeln('Copying files for bundle: Installer');
         $this->assetService->copyAssets(new Installer());
-
-        $io->writeln('Copying files for bundle: Recovery');
-        $this->assetService->copyRecoveryAssets();
 
         $publicDir = $this->kernel->getProjectDir() . '/public/';
 

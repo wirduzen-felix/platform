@@ -112,11 +112,18 @@ Component.register('sw-tabs', {
         },
 
         activeTabHasErrors() {
-            return this.$children[this.activeItem] && this.$children[this.activeItem].hasError;
+            return this.$children[this.activeItem]?.hasError ?? false;
+        },
+
+        activeTabHasWarnings() {
+            return this.$children[this.activeItem]?.hasWarning ?? false;
         },
 
         sliderClasses() {
-            return { 'has--error': this.activeTabHasErrors };
+            return {
+                'has--error': this.activeTabHasErrors,
+                'has--warning': !this.activeTabHasErrors && this.activeTabHasWarnings,
+            };
         },
 
         sliderMovement() {
@@ -161,6 +168,10 @@ Component.register('sw-tabs', {
         activeTabHasErrors() {
             this.recalculateSlider();
         },
+
+        activeTabHasWarnings() {
+            this.recalculateSlider();
+        },
     },
 
     created() {
@@ -171,6 +182,10 @@ Component.register('sw-tabs', {
         this.mountedComponent();
     },
 
+    beforeDestroy() {
+        this.beforeDestroyComponent();
+    },
+
     methods: {
         createdComponent() {
             this.updateActiveItem();
@@ -179,13 +194,26 @@ Component.register('sw-tabs', {
         mountedComponent() {
             const tabContent = this.$refs.swTabContent;
 
-            tabContent.addEventListener('scroll', util.throttle(() => {
+            /* Can't be a property in methods because otherwise the this context is not available
+             */
+            this.scrollEventHandler = util.throttle(() => {
                 const rightEnd = tabContent.scrollWidth - tabContent.offsetWidth;
                 const leftDistance = tabContent.scrollLeft;
 
                 this.scrollRightPossible = !(rightEnd - leftDistance < 5);
                 this.scrollLeftPossible = !(leftDistance < 5);
-            }, 100));
+            }, 100);
+
+            /* Can't be a property in methods because otherwise the this context is not available
+             */
+            this.tabContentMutationObserver = new MutationObserver(this.onTabBarResize);
+            this.tabContentMutationObserver.observe(tabContent, {
+                subtree: true,
+                characterData: true,
+                attributes: true,
+            });
+
+            tabContent.addEventListener('scroll', this.scrollEventHandler);
 
             this.checkIfNeedScroll();
             this.addScrollbarOffset();
@@ -204,6 +232,25 @@ Component.register('sw-tabs', {
             if (this.$scopedSlots.default && this.$scopedSlots.default()?.[0]?.componentOptions?.propsData?.route) {
                 this.hasRoutes = true;
             }
+        },
+
+        beforeDestroyComponent() {
+            const tabContent = this.$refs.swTabContent;
+
+            tabContent.removeEventListener('scroll', this.scrollEventHandler);
+            this.$device.removeResizeListener(this);
+
+            if (this.tabContentMutationObserver) {
+                this.tabContentMutationObserver.disconnect();
+            }
+        },
+
+        onTabBarResize() {
+            requestAnimationFrame(async () => {
+                this.checkIfNeedScroll();
+                this.addScrollbarOffset();
+                this.recalculateSlider();
+            });
         },
 
         recalculateSlider() {
@@ -249,6 +296,11 @@ Component.register('sw-tabs', {
 
         checkIfNeedScroll() {
             const tabContent = this.$refs.swTabContent;
+
+            if (!tabContent) {
+                return;
+            }
+
             this.isScrollable = tabContent.scrollWidth !== tabContent.offsetWidth;
         },
 
@@ -271,6 +323,10 @@ Component.register('sw-tabs', {
         },
 
         addScrollbarOffset() {
+            if (!this.$refs.swTabContent) {
+                return;
+            }
+
             this.scrollbarOffset = dom.getScrollbarHeight(this.$refs.swTabContent);
         },
     },

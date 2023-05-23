@@ -9,6 +9,7 @@ use Shopware\Core\Checkout\Customer\SalesChannel\DownloadRoute;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\DownloadController;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,7 +26,7 @@ class DownloadControllerTest extends TestCase
 
     private DownloadController $controller;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->downloadRouteMock = $this->createMock(DownloadRoute::class);
 
@@ -48,6 +49,7 @@ class DownloadControllerTest extends TestCase
             )
             ->willReturn('bar');
         $containerBuilder->set('router', $router);
+        $containerBuilder->set('event_dispatcher', static::createMock(EventDispatcherInterface::class));
         $this->controller->setContainer($containerBuilder);
         $this->downloadRouteMock->method('load')->willReturn(new Response());
 

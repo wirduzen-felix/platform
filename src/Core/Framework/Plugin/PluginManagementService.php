@@ -41,12 +41,16 @@ class PluginManagementService
 
         if ($storeType) {
             $this->pluginExtractor->extract($archive, $delete, $storeType);
+            if ($storeType === self::PLUGIN) {
+                $this->cacheClearer->clearContainerCache();
+            }
 
             return $storeType;
         }
 
         if ($this->pluginZipDetector->isPlugin($archive)) {
             $this->pluginExtractor->extract($archive, $delete, self::PLUGIN);
+            $this->cacheClearer->clearContainerCache();
 
             return self::PLUGIN;
         }
@@ -74,7 +78,6 @@ class PluginManagementService
 
         if ($type === self::PLUGIN) {
             $this->pluginService->refreshPlugins($context, new NullIO());
-            $this->cacheClearer->clearContainerCache();
         }
     }
 
@@ -97,7 +100,6 @@ class PluginManagementService
 
         if ($location->getType() === self::PLUGIN) {
             $this->pluginService->refreshPlugins($context, new NullIO());
-            $this->cacheClearer->clearContainerCache();
         }
     }
 

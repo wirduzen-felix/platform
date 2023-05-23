@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Framework\DataAbstractionLayer\Dbal;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Context;
@@ -916,7 +917,7 @@ class EntityReader implements EntityReaderInterface
             --$i;
 
             // Strip the ASC/DESC at the end of the sort
-            $query->addSelect(\sprintf('%s as sort_%s', substr((string) $sorting, 0, -4), $i));
+            $query->addSelect(\sprintf('%s as sort_%d', substr((string) $sorting, 0, -4), $i));
         }
 
         $root = EntityDefinitionQueryHelper::escape($definition->getEntityName());
@@ -960,7 +961,7 @@ class EntityReader implements EntityReaderInterface
             }
         }
 
-        $wrapper->setParameter('rootIds', $bytes, Connection::PARAM_STR_ARRAY);
+        $wrapper->setParameter('rootIds', $bytes, ArrayParameterType::STRING);
 
         $limit = $fieldCriteria->getOffset() + $fieldCriteria->getLimit();
         $offset = $fieldCriteria->getOffset() + 1;

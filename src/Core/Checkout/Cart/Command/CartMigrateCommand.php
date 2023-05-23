@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\Checkout\Cart\Command;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Checkout\Cart\RedisCartPersister;
 use Shopware\Core\Framework\Adapter\Cache\CacheValueCompressor;
@@ -34,9 +35,13 @@ class CartMigrateCommand extends Command
      * @internal
      *
      * @param \Redis|\RedisArray|\RedisCluster|RedisClusterProxy|RedisProxy|null $redis
+     *
+     * @phpstan-ignore-next-line ignore can be removed in 6.6.0 when all props are natively typed
      */
     public function __construct(
+        /** @deprecated tag:v6.6.0 - Property will be natively typed and become private and readonly */
         protected $redis,
+        /** @deprecated tag:v6.6.0 - Property will become private and readonly */
         protected Connection $connection,
         private readonly bool $compress,
         private readonly int $expireDays,
@@ -198,7 +203,7 @@ class CartMigrateCommand extends Command
         $payloadExists = EntityDefinitionQueryHelper::columnExists($this->connection, 'cart', 'payload');
 
         while ($tokens = $iterator->fetch()) {
-            $rows = $this->connection->fetchAllAssociative('SELECT * FROM cart WHERE token IN (:tokens)', ['tokens' => $tokens], ['tokens' => Connection::PARAM_STR_ARRAY]);
+            $rows = $this->connection->fetchAllAssociative('SELECT * FROM cart WHERE token IN (:tokens)', ['tokens' => $tokens], ['tokens' => ArrayParameterType::STRING]);
 
             $values = [];
             foreach ($rows as $row) {

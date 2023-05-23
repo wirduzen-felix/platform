@@ -84,7 +84,7 @@ export default {
         restrictedFields() {
             let restrictedFields = [];
 
-            if (this.$route.params.excludeDelivery) {
+            if (this.$route.params.excludeDelivery === '1') {
                 restrictedFields = restrictedFields.concat([
                     'orderDeliveries',
                 ]);
@@ -358,8 +358,11 @@ export default {
 
             const requests = payloadChunks.map(ids => {
                 const criteria = new Criteria(1, null);
-                criteria.addFilter(Criteria.equalsAny(field, ids));
-                criteria.addFilter(Criteria.equals(versionField, Shopware.Context.api.liveVersionId));
+
+                criteria.addFilter(Criteria.multi('AND', [
+                    Criteria.equalsAny(field, ids),
+                    Criteria.equals(versionField, Shopware.Context.api.liveVersionId),
+                ]));
 
                 return this.stateMachineStateRepository.searchIds(criteria);
             });

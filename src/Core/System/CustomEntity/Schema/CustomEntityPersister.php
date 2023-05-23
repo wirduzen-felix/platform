@@ -2,6 +2,7 @@
 
 namespace Shopware\Core\System\CustomEntity\Schema;
 
+use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
 use Shopware\Core\Framework\Api\ApiDefinition\Generator\CachedEntitySchemaGenerator;
@@ -37,7 +38,7 @@ class CustomEntityPersister
         $existings = $this->connection->fetchAllAssociativeIndexed(
             'SELECT `name`, LOWER(HEX(id)) as id, created_at FROM custom_entity WHERE `name` IN (:names)',
             ['names' => $names],
-            ['names' => Connection::PARAM_STR_ARRAY]
+            ['names' => ArrayParameterType::STRING]
         );
 
         if ($extensionEntityType === PluginEntity::class && $extensionId) {
@@ -64,6 +65,11 @@ class CustomEntityPersister
 
             $customEntity['flags'] = json_encode($customEntity['flags'], \JSON_THROW_ON_ERROR | \JSON_PRESERVE_ZERO_FRACTION);
             $customEntity['fields'] = json_encode($customEntity['fields'], \JSON_THROW_ON_ERROR | \JSON_PRESERVE_ZERO_FRACTION);
+
+            $customEntity['custom_fields_aware'] = ($customEntity['customFieldsAware'] ?? false) ? 1 : 0;
+            $customEntity['label_property'] = $customEntity['labelProperty'] ?? null;
+            unset($customEntity['customFieldsAware']);
+            unset($customEntity['labelProperty']);
 
             $name = $customEntity['name'];
             $id = isset($existings[$name]) ? $existings[$name]['id'] : Uuid::randomHex();

@@ -9,6 +9,7 @@ use Shopware\Core\Content\Flow\Dispatching\Aware\EmailAware;
 use Shopware\Core\Content\Flow\Dispatching\StorableFlow;
 use Shopware\Core\Content\Flow\Dispatching\Storer\EmailStorer;
 use Shopware\Core\Content\Test\Flow\TestFlowBusinessEvent;
+use Shopware\Core\Framework\Feature;
 
 /**
  * @package business-ops
@@ -21,8 +22,10 @@ class EmailStorerTest extends TestCase
 {
     private EmailStorer $storer;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
+        Feature::skipTestIfActive('v6.6.0.0', $this);
+
         $this->storer = new EmailStorer();
     }
 

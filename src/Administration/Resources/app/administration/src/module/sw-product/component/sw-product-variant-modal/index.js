@@ -164,6 +164,13 @@ export default {
                     allowResize: true,
                 },
                 {
+                    property: 'sales',
+                    dataIndex: 'sales',
+                    label: this.$tc('sw-product.list.columnSales'),
+                    allowResize: true,
+                    align: 'right',
+                },
+                {
                     property: 'price',
                     dataIndex: `price.${this.currency?.id || ''}.net`,
                     label: 'sw-product.list.columnPrice',
@@ -676,9 +683,12 @@ export default {
         async onEditItems() {
             await this.$nextTick();
 
-            const includesDigital = Object.values(this.$refs.variantGrid.selection).filter((product) => {
-                return product.states.includes('is-download');
-            }).length > 0;
+            let includesDigital = '0';
+            const digital = Object.values(this.$refs.variantGrid.selection)
+                .filter(product => product.states.includes('is-download'));
+            if (digital.length > 0) {
+                includesDigital = (digital.filter(product => product.isCloseout).length !== digital.length) ? '1' : '2';
+            }
 
             this.$router.push({
                 name: 'sw.bulk.edit.product',

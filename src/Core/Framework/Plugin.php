@@ -109,7 +109,7 @@ abstract class Plugin extends Bundle
         }
 
         $class = addcslashes($this->getMigrationNamespace(), '\\_%') . '%';
-        Kernel::getConnection()->executeUpdate('DELETE FROM migration WHERE class LIKE :class', ['class' => $class]);
+        Kernel::getConnection()->executeStatement('DELETE FROM migration WHERE class LIKE :class', ['class' => $class]);
     }
 
     public function getBasePath(): string
@@ -132,7 +132,7 @@ abstract class Plugin extends Bundle
 
     private function computePluginClassPath(): string
     {
-        $canonicalizedPluginClassPath = parent::getPath();
+        $canonicalizedPluginClassPath = $this->getPath();
         $canonicalizedPluginPath = realpath($this->basePath);
 
         if ($canonicalizedPluginPath !== false && mb_strpos($canonicalizedPluginClassPath, $canonicalizedPluginPath) === 0) {
@@ -141,6 +141,6 @@ abstract class Plugin extends Bundle
             return $this->basePath . $relativePluginClassPath;
         }
 
-        return parent::getPath();
+        return $this->getPath();
     }
 }

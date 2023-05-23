@@ -1,5 +1,7 @@
 <?php declare(strict_types=1);
 
+namespace Shopware\Storefront\Test\Framework\Cookie;
+
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Framework\Test\TestCaseBase\IntegrationTestBehaviour;
@@ -19,7 +21,7 @@ class AppCookieProviderTest extends TestCase
 
     private AppCookieProvider $appCookieProvider;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->baseProvider = $this->createMock(CookieProviderInterface::class);
         $this->appCookieProvider = new AppCookieProvider(

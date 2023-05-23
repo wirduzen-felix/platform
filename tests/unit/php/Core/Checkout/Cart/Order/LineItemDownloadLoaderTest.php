@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace unit\php\Core\Checkout\Cart\Order;
+namespace Shopware\Tests\Unit\Core\Checkout\Cart\Order;
 
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -25,7 +25,7 @@ class LineItemDownloadLoaderTest extends TestCase
 
     private LineItemDownloadLoader $loader;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->productDownloadRepository = $this->createMock(EntityRepository::class);
 

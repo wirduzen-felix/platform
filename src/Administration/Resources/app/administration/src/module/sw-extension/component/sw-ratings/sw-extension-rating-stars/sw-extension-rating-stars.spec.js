@@ -6,15 +6,15 @@ Shopware.Component.register('sw-extension-rating-stars', swExtensionRatingStars)
 /**
  * @package merchant-services
  */
-describe('src/module/sw-extension/component/sw-extension-rating-stars', () => {
+describe('src/module/sw-extension/component/sw-ratings/sw-extension-rating-stars', () => {
     /** @type Wrapper */
     let wrapper;
 
     async function createWrapper() {
         return shallowMount(await Shopware.Component.build('sw-extension-rating-stars'), {
             stubs: {
-                'sw-icon': true
-            }
+                'sw-icon': true,
+            },
         });
     }
 

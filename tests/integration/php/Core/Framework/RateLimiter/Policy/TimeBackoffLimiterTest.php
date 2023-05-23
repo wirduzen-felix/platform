@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace Shopware\Tests\Core\Framework\RateLimiter\Policy;
+namespace Shopware\Tests\Integration\Core\Framework\RateLimiter\Policy;
 
 use PHPUnit\Framework\TestCase;
 use Shopware\Core\Checkout\Test\Customer\SalesChannel\CustomerTestTrait;
@@ -36,7 +36,7 @@ class TimeBackoffLimiterTest extends TestCase
 
     private string $id;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         $this->config = [
             'enabled' => true,
